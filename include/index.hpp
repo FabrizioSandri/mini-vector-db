@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <random>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -29,8 +30,8 @@ class HNSWIndex {
 public:
     explicit HNSWIndex(HNSWConfig config = HNSWConfig{});
 
-    // Add a vector with external ID. dim must match consistently across calls.
-    void add(std::size_t external_id, const float *vector, std::size_t dim);
+    // Add a vector with ID. dim must match consistently across calls.
+    void add(std::size_t id, const float *vector, std::size_t dim);
 
     // k-nearest neighbors search
     std::vector<Candidate> search(const float *query, std::size_t k) const;
@@ -49,7 +50,7 @@ private:
     std::size_t count_ = 0;
     std::mt19937 rng_;
 
-    std::vector<Node> nodes_;
+    std::unordered_map<std::size_t, Node> nodes_;
     std::size_t entry_point_ = 0;
 
     // Internal helpers

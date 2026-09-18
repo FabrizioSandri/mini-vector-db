@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <fmt/format.h>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -38,24 +37,27 @@ vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidate
     return candidates;
 }
 
-void HNSWIndex::add(size_t external_id, const float *vec, size_t dim) {
+void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
     if (dim != this->config_.dim) {
-        throw invalid_argument(fmt::format(
-            "Vector dimension {} does not match index dimension {}.", dim, this->config_.dim));
+        throw invalid_argument(
+            "Vector dimension " + std::to_string(dim) +
+            " does not match index dimension " + std::to_string(this->config_.dim) + ".");
     }
 
-    const size_t new_node_id = count_++;
+    if (nodes_.find(id) != nodes_.end()) {
+        throw runtime_error("Node with ID " + std::to_string(id) + " already exists.");
+    }
+
     const size_t l = random_level();
+    count_++;
 
     Node node = Node{
-        external_id,
+        id,
         l,
         std::vector<float>(vec, vec + dim),
         std::vector<std::vector<size_t>>(l + 1)};
 
-    nodes_.push_back(std::move(node));
-    fmt::print("Adding node {} with external_id={} at level {}\n", new_node_id, external_id, l);
-
+    nodes_[id] = std::move(node);
     if (count_ == 1) {
         entry_point_ = 0;
         return;
@@ -79,8 +81,8 @@ void HNSWIndex::add(size_t external_id, const float *vec, size_t dim) {
 
         // Add bidirectional connections from neighbors to q at layer lc
         for (const auto &[dist, neighbor_id] : neighbors) {
-            nodes_[new_node_id].neighbors[lc].push_back(neighbor_id);
-            nodes_[neighbor_id].neighbors[lc].push_back(new_node_id);
+            nodes_[id].neighbors[lc].push_back(neighbor_id);
+            nodes_[neighbor_id].neighbors[lc].push_back(id);
         }
 
         // Shrink connections of each neighbor if it now exceeds Mmax at this layer.
@@ -124,7 +126,7 @@ void HNSWIndex::add(size_t external_id, const float *vec, size_t dim) {
 
     // Update the global entry point if the new node is at a higher level than the previous entry point.
     if (l > L) {
-        entry_point_ = new_node_id;
+        entry_point_ = id;
     }
 }
 
@@ -139,7 +141,7 @@ vector<Candidate> HNSWIndex::search_layer(
     priority_queue<Candidate> max_queue;                                // Max-priority queue W
     std::set<size_t> seen;
 
-    const float ep_dist = config_.distance(query, nodes_[ep].embedding.data(), dim);
+    const float ep_dist = config_.distance(query, nodes_.at(ep).embedding.data(), dim);
 
     max_queue.emplace(ep_dist, ep);
     candidates.emplace(ep_dist, ep);
@@ -154,13 +156,12 @@ vector<Candidate> HNSWIndex::search_layer(
         }
 
         candidates.pop();
-
-        for (size_t nb : nodes_[closest].neighbors[level]) {
+        for (size_t nb : nodes_.at(closest).neighbors[level]) {
             if (seen.find(nb) != seen.end()) {
                 continue;
             }
             seen.insert(nb);
-            const float nd = config_.distance(query, nodes_[nb].embedding.data(), dim);
+            const float nd = config_.distance(query, nodes_.at(nb).embedding.data(), dim);
             const auto [df, furthest] = max_queue.top(); // extract farthest element from visited
 
             if (nd < df || max_queue.size() < ef) {
@@ -190,7 +191,7 @@ std::vector<Candidate> HNSWIndex::search(const float *query, size_t k) const {
     }
 
     size_t ep = entry_point_;
-    const size_t L = nodes_[entry_point_].level;
+    const size_t L = nodes_.at(entry_point_).level;
 
     // K-NN-SEARCH: for lc <- L ... 1, greedy descent with ef=1.
     for (size_t lc = L; lc > 0; --lc) {
@@ -210,7 +211,7 @@ std::vector<Candidate> HNSWIndex::search(const float *query, size_t k) const {
         if (results.size() == k) {
             break;
         }
-        results.push_back({distance, nodes_[id].id});
+        results.push_back({distance, nodes_.at(id).id});
     }
     return results;
 }
