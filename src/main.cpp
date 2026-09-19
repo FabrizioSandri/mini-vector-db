@@ -55,7 +55,7 @@ int main() {
     auto results = index.search(buf.data(), k, D);
 
     fmt::print("Top-{} neighbors:\n", k);
-    for (const auto &r : results) {
+    for (const auto& r : results) {
         fmt::print("  id={} distance={:.4f}\n", r.second, r.first);
     }
 

@@ -31,7 +31,7 @@ public:
     explicit HNSWIndex(HNSWConfig config = HNSWConfig{});
 
     // Add a vector with ID. dim must match consistently across calls.
-    void add(std::size_t id, const float *vector, std::size_t dim);
+    void add(std::size_t id, const float* vector, std::size_t dim);
 
     // Remove a vector with ID
     void remove(std::size_t id);
@@ -40,7 +40,7 @@ public:
     std::size_t size() const;
 
     // k-nearest neighbors search
-    std::vector<Candidate> search(const float *query, std::size_t k, std::size_t dim) const;
+    std::vector<Candidate> search(const float* query, std::size_t k, std::size_t dim) const;
 
 private:
     struct Node {
@@ -54,13 +54,13 @@ private:
     HNSWConfig config_;
     std::mt19937 rng_;
 
-    std::unordered_map<std::size_t, Node> nodes_;
+    std::unordered_map<std::size_t, Node*> nodes_;
     std::size_t entry_point_ = 0;
 
     // Internal helpers
     std::size_t random_level();
 
-    std::vector<Candidate> search_layer(const float *query,
+    std::vector<Candidate> search_layer(const float* query,
                                         std::size_t ep,
                                         std::size_t ef,
                                         std::size_t level,

@@ -24,3 +24,5 @@ PackConstructorInitializers: Never
 
 # Do not collapse short bodies such as: Foo() {}
 AllowShortFunctionsOnASingleLine: None
+
+PointerAlignment: Left

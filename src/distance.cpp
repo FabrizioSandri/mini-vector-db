@@ -1,7 +1,7 @@
 #include "distance.hpp"
 #include <cmath>
 
-float l2_distance(const float *a, const float *b, std::size_t dim) {
+float l2_distance(const float* a, const float* b, std::size_t dim) {
     float sum = 0.0f;
     for (std::size_t i = 0; i < dim; ++i) {
         const float d = a[i] - b[i];
@@ -10,7 +10,7 @@ float l2_distance(const float *a, const float *b, std::size_t dim) {
     return sum;
 }
 
-float cosine_distance(const float *a, const float *b, std::size_t dim) {
+float cosine_distance(const float* a, const float* b, std::size_t dim) {
     float dot = 0.0f;
     float norm_a = 0.0f;
     float norm_b = 0.0f;
@@ -26,7 +26,7 @@ float cosine_distance(const float *a, const float *b, std::size_t dim) {
     return 1.0f - (dot / denom);
 }
 
-float dot_product(const float *a, const float *b, std::size_t dim) {
+float dot_product(const float* a, const float* b, std::size_t dim) {
     float sum = 0.0f;
     for (std::size_t i = 0; i < dim; ++i) {
         sum += a[i] * b[i];

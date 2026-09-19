@@ -29,7 +29,7 @@ size_t HNSWIndex::random_level() {
 
 vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidates, size_t M) const {
     // return the M nearest elements to q from candidates
-    sort(candidates.begin(), candidates.end(), [](const Candidate &a, const Candidate &b) {
+    sort(candidates.begin(), candidates.end(), [](const Candidate& a, const Candidate& b) {
         return a.first < b.first;
     });
     if (candidates.size() > M) {
@@ -38,7 +38,7 @@ vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidate
     return candidates;
 }
 
-void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
+void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     if (dim != this->config_.dim) {
         throw invalid_argument("Vector dimension " + std::to_string(dim) +
                                " does not match index dimension " +
@@ -50,17 +50,19 @@ void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
     }
 
     const size_t l = random_level();
-    Node node =
-        Node{id, l, std::vector<float>(vec, vec + dim), std::vector<std::vector<size_t>>(l + 1)};
+    Node* node = new Node{id,
+                          l,
+                          std::vector<float>(vec, vec + dim),
+                          std::vector<std::vector<size_t>>(l + 1)};
 
-    nodes_[id] = std::move(node);
+    nodes_[id] = node;
     if (nodes_.size() == 1) {
         entry_point_ = id;
         return;
     }
 
     size_t ep = entry_point_;
-    const size_t L = nodes_[ep].level; // top layer of the graph, *before* this insertion
+    const size_t L = nodes_[ep]->level; // top layer of the graph, *before* this insertion
 
     // Phase 1: greedy descent with ef=1.
     for (size_t lc = L; lc > l; lc--) {
@@ -76,9 +78,9 @@ void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
         auto neighbors = select_neighbors_simple(candidates, config_.M);
 
         // Add bidirectional connections from neighbors to q at layer lc
-        for (const auto &[dist, neighbor_id] : neighbors) {
-            nodes_[id].neighbors[lc].push_back(neighbor_id);
-            nodes_[neighbor_id].neighbors[lc].push_back(id);
+        for (const auto& [dist, neighbor_id] : neighbors) {
+            nodes_[id]->neighbors[lc].push_back(neighbor_id);
+            nodes_[neighbor_id]->neighbors[lc].push_back(id);
         }
 
         // Shrink connections of each neighbor if it now exceeds Mmax at this layer.
@@ -89,8 +91,8 @@ void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
         // at this point. That means "select the M nearest" reduces to "drop the
         // single farthest element"
         const size_t cap = lc == 0 ? config_.Mmax0 : config_.Mmax;
-        for (const auto &[dist, neighbor_id] : neighbors) {
-            auto &e_conn = nodes_[neighbor_id].neighbors[lc];
+        for (const auto& [dist, neighbor_id] : neighbors) {
+            auto& e_conn = nodes_[neighbor_id]->neighbors[lc];
             if (e_conn.size() <= cap) {
                 continue;
             }
@@ -98,8 +100,8 @@ void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
             size_t to_prune = -1; // the index of the farthest neighbor to prune
             float max_dist = -std::numeric_limits<float>::max();
             for (size_t i = 0; i < e_conn.size(); i++) {
-                const float d = config_.distance(nodes_[neighbor_id].embedding.data(),
-                                                 nodes_[e_conn[i]].embedding.data(),
+                const float d = config_.distance(nodes_[neighbor_id]->embedding.data(),
+                                                 nodes_[e_conn[i]]->embedding.data(),
                                                  config_.dim);
                 if (d > max_dist) {
                     max_dist = d;
@@ -118,7 +120,7 @@ void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
             ep = min_element(
                      candidates.begin(),
                      candidates.end(),
-                     [](const Candidate &a, const Candidate &b) { return a.first < b.first; })
+                     [](const Candidate& a, const Candidate& b) { return a.first < b.first; })
                      ->second;
         }
     }
@@ -131,13 +133,13 @@ void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
 }
 
 vector<Candidate>
-HNSWIndex::search_layer(const float *query, size_t ep, size_t ef, size_t level, size_t dim) const {
+HNSWIndex::search_layer(const float* query, size_t ep, size_t ef, size_t level, size_t dim) const {
 
     priority_queue<Candidate, vector<Candidate>, greater<>> candidates; // Min-priority queue C
     priority_queue<Candidate> max_queue;                                // Max-priority queue W
     std::set<size_t> seen;
 
-    const float ep_dist = config_.distance(query, nodes_.at(ep).embedding.data(), dim);
+    const float ep_dist = config_.distance(query, nodes_.at(ep)->embedding.data(), dim);
 
     max_queue.emplace(ep_dist, ep);
     candidates.emplace(ep_dist, ep);
@@ -152,12 +154,12 @@ HNSWIndex::search_layer(const float *query, size_t ep, size_t ef, size_t level, 
         }
 
         candidates.pop();
-        for (size_t nb : nodes_.at(closest).neighbors[level]) {
+        for (size_t nb : nodes_.at(closest)->neighbors[level]) {
             if (seen.find(nb) != seen.end()) {
                 continue;
             }
             seen.insert(nb);
-            const float nd = config_.distance(query, nodes_.at(nb).embedding.data(), dim);
+            const float nd = config_.distance(query, nodes_.at(nb)->embedding.data(), dim);
             const auto [df, furthest] = max_queue.top(); // extract farthest element from visited
 
             if (nd < df || max_queue.size() < ef) {
@@ -181,7 +183,7 @@ HNSWIndex::search_layer(const float *query, size_t ep, size_t ef, size_t level, 
     return result;
 }
 
-std::vector<Candidate> HNSWIndex::search(const float *query, size_t k, std::size_t dim) const {
+std::vector<Candidate> HNSWIndex::search(const float* query, size_t k, std::size_t dim) const {
     if (dim != this->config_.dim) {
         throw invalid_argument("Query dimension " + std::to_string(dim) +
                                " does not match index dimension " +
@@ -193,7 +195,7 @@ std::vector<Candidate> HNSWIndex::search(const float *query, size_t k, std::size
     }
 
     size_t ep = entry_point_;
-    const size_t L = nodes_.at(entry_point_).level;
+    const size_t L = nodes_.at(entry_point_)->level;
 
     // K-NN-SEARCH: for lc <- L ... 1, greedy descent with ef=1.
     for (size_t lc = L; lc > 0; --lc) {
@@ -209,11 +211,11 @@ std::vector<Candidate> HNSWIndex::search(const float *query, size_t k, std::size
 
     std::vector<Candidate> results;
     results.reserve(min(k, layer_results.size()));
-    for (const auto &[distance, id] : layer_results) {
+    for (const auto& [distance, id] : layer_results) {
         if (results.size() == k) {
             break;
         }
-        results.push_back({distance, nodes_.at(id).id});
+        results.push_back({distance, id});
     }
     return results;
 }
@@ -227,27 +229,28 @@ void HNSWIndex::remove(size_t id) {
     // if the node was the entry point and there are other nodes, update the entry point, by picking
     // the node with the highest level among the remaining nodes
     if (nodes_.size() > 1 && id == entry_point_) {
-        for (const auto &[nid, n] : nodes_) {
-            if (nid != id && n.level > nodes_[entry_point_].level) {
+        for (const auto& [nid, n] : nodes_) {
+            if (nid != id && n->level > nodes_[entry_point_]->level) {
                 entry_point_ = nid;
             }
         }
     }
 
     // remove the node from its neighbors' neighbor lists
-    for (size_t level = 0; level <= node->second.level; ++level) {
-        for (size_t neighbor_id : node->second.neighbors[level]) {
+    for (size_t level = 0; level <= node->second->level; ++level) {
+        for (size_t neighbor_id : node->second->neighbors[level]) {
             auto neighbor = nodes_.find(neighbor_id);
             if (neighbor != nodes_.end()) {
-                auto &neighbor_list = neighbor->second.neighbors[level];
+                auto& neighbor_list = neighbor->second->neighbors[level];
                 neighbor_list.erase(std::remove(neighbor_list.begin(), neighbor_list.end(), id),
                                     neighbor_list.end());
             }
         }
     }
 
-    // remove the node from the index
+    // remove the node from the index and deallocate its memory
     nodes_.erase(node);
+    delete node->second;
 }
 
 std::size_t HNSWIndex::size() const {
