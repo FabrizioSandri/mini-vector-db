@@ -12,7 +12,6 @@
 #include "distance.hpp"
 #include <algorithm>
 
-
 using Candidate = std::pair<float, std::size_t>; // (distance, id)
 
 struct HNSWConfig {
