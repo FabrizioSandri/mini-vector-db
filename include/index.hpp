@@ -12,6 +12,7 @@
 #include "distance.hpp"
 #include <algorithm>
 
+
 using Candidate = std::pair<float, std::size_t>; // (distance, id)
 
 struct HNSWConfig {
@@ -55,16 +56,14 @@ private:
     // Internal helpers
     std::size_t random_level();
 
-    std::vector<Candidate> search_layer(
-        const float *query,
-        std::size_t ep,
-        std::size_t ef,
-        std::size_t level,
-        std::size_t dim) const;
+    std::vector<Candidate> search_layer(const float *query,
+                                        std::size_t ep,
+                                        std::size_t ef,
+                                        std::size_t level,
+                                        std::size_t dim) const;
 
-    std::vector<Candidate> select_neighbors_simple(
-        std::vector<Candidate> candidates,
-        std::size_t M) const;
+    std::vector<Candidate> select_neighbors_simple(std::vector<Candidate> candidates,
+                                                   std::size_t M) const;
 };
 
 #endif

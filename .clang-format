@@ -6,7 +6,9 @@ TabWidth: 4
 UseTab: Never
 
 ColumnLimit: 100
-IndentAccessModifiers: true
+IndentAccessModifiers: false
+AccessModifierOffset: -4
+# MaxEmptyLinesToKeep: 2
 
 # Wrapped function calls: one argument on each line.
 BinPackArguments: false

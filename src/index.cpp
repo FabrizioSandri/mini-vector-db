@@ -11,8 +11,10 @@
 
 using namespace std;
 
-HNSWIndex::HNSWIndex(HNSWConfig config)
-    : config_(move(config)), rng_(42) {}
+HNSWIndex::HNSWIndex(HNSWConfig config) :
+    config_(move(config)),
+    rng_(42) {
+}
 
 size_t HNSWIndex::random_level() {
     // l <- floor(-ln(unif(0,1)) * mL)
@@ -27,10 +29,9 @@ size_t HNSWIndex::random_level() {
 
 vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidates, size_t M) const {
     // return the M nearest elements to q from candidates
-    sort(candidates.begin(), candidates.end(),
-         [](const Candidate &a, const Candidate &b) {
-             return a.first < b.first;
-         });
+    sort(candidates.begin(), candidates.end(), [](const Candidate &a, const Candidate &b) {
+        return a.first < b.first;
+    });
     if (candidates.size() > M) {
         candidates.resize(M);
     }
@@ -39,9 +40,9 @@ vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidate
 
 void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
     if (dim != this->config_.dim) {
-        throw invalid_argument(
-            "Vector dimension " + std::to_string(dim) +
-            " does not match index dimension " + std::to_string(this->config_.dim) + ".");
+        throw invalid_argument("Vector dimension " + std::to_string(dim) +
+                               " does not match index dimension " +
+                               std::to_string(this->config_.dim) + ".");
     }
 
     if (nodes_.find(id) != nodes_.end()) {
@@ -51,11 +52,8 @@ void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
     const size_t l = random_level();
     count_++;
 
-    Node node = Node{
-        id,
-        l,
-        std::vector<float>(vec, vec + dim),
-        std::vector<std::vector<size_t>>(l + 1)};
+    Node node =
+        Node{id, l, std::vector<float>(vec, vec + dim), std::vector<std::vector<size_t>>(l + 1)};
 
     nodes_[id] = std::move(node);
     if (count_ == 1) {
@@ -102,40 +100,40 @@ void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
             size_t to_prune = -1; // the index of the farthest neighbor to prune
             float max_dist = -std::numeric_limits<float>::max();
             for (size_t i = 0; i < e_conn.size(); i++) {
-                const float d = config_.distance(nodes_[neighbor_id].embedding.data(), nodes_[e_conn[i]].embedding.data(), config_.dim);
+                const float d = config_.distance(nodes_[neighbor_id].embedding.data(),
+                                                 nodes_[e_conn[i]].embedding.data(),
+                                                 config_.dim);
                 if (d > max_dist) {
                     max_dist = d;
                     to_prune = i;
                 }
             }
             if (to_prune == -1) {
-                throw runtime_error("Failed to find a neighbor to prune, this should never happen.");
+                throw runtime_error(
+                    "Failed to find a neighbor to prune, this should never happen.");
             }
             e_conn.erase(e_conn.begin() + to_prune);
         }
 
         // ep <- W: continue from the nearest element found at this layer.
         if (!candidates.empty()) {
-            ep = min_element(candidates.begin(), candidates.end(),
-                             [](const Candidate &a, const Candidate &b) {
-                                 return a.first < b.first;
-                             })
+            ep = min_element(
+                     candidates.begin(),
+                     candidates.end(),
+                     [](const Candidate &a, const Candidate &b) { return a.first < b.first; })
                      ->second;
         }
     }
 
-    // Update the global entry point if the new node is at a higher level than the previous entry point.
+    // Update the global entry point if the new node is at a higher level than the previous entry
+    // point.
     if (l > L) {
         entry_point_ = id;
     }
 }
 
-vector<Candidate> HNSWIndex::search_layer(
-    const float *query,
-    size_t ep,
-    size_t ef,
-    size_t level,
-    size_t dim) const {
+vector<Candidate>
+HNSWIndex::search_layer(const float *query, size_t ep, size_t ef, size_t level, size_t dim) const {
 
     priority_queue<Candidate, vector<Candidate>, greater<>> candidates; // Min-priority queue C
     priority_queue<Candidate> max_queue;                                // Max-priority queue W
