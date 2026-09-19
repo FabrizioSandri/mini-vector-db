@@ -220,8 +220,8 @@ std::vector<Candidate> HNSWIndex::search(const float* query, size_t k, std::size
 }
 
 void HNSWIndex::remove(size_t id) {
-    auto node = nodes_.find(id);
-    if (node == nodes_.end()) {
+    auto node_it = nodes_.find(id);
+    if (node_it == nodes_.end()) {
         throw runtime_error("Node with ID " + std::to_string(id) + " does not exist.");
     }
 
@@ -236,8 +236,8 @@ void HNSWIndex::remove(size_t id) {
     }
 
     // remove the node from its neighbors' neighbor lists
-    for (size_t level = 0; level <= node->second->level; ++level) {
-        for (size_t neighbor_id : node->second->neighbors[level]) {
+    for (size_t level = 0; level <= node_it->second->level; ++level) {
+        for (size_t neighbor_id : node_it->second->neighbors[level]) {
             auto neighbor = nodes_.find(neighbor_id);
             if (neighbor != nodes_.end()) {
                 auto& neighbor_list = neighbor->second->neighbors[level];
@@ -248,8 +248,9 @@ void HNSWIndex::remove(size_t id) {
     }
 
     // remove the node from the index and deallocate its memory
-    nodes_.erase(node);
-    delete node->second;
+    Node* node_to_delete = node_it->second;
+    nodes_.erase(node_it);
+    delete node_to_delete;
 }
 
 std::size_t HNSWIndex::size() const {

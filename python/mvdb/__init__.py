@@ -5,9 +5,17 @@ core implementation. The main entry point is :class:`MVDB`, which stores
 float vectors and supports insertion, removal, and nearest-neighbor search.
 """
 
+import enum
+
 import numpy as np
 
-from mvdb._core import Distance, HNSWIndex
+from mvdb._core import Distance as Distance_
+from mvdb._core import HNSWIndex as HNSWIndex_
+
+
+class Distance(enum.Enum):
+    L2 = Distance_.L2
+    COSINE = Distance_.COSINE
 
 
 class MVDB:
@@ -38,13 +46,13 @@ class MVDB:
             distance: Distance metric to use for similarity or dissimilarity
                 comparisons.
         """
-        self.index = HNSWIndex(
+        self.index = HNSWIndex_(
             dim=dim,
             M=M,
             ef_construction=ef_construction,
             ef_search=ef_search,
             max_level=max_level,
-            distance=distance,
+            distance=distance.value,
         )
 
     def add(self, id: int, vector: np.ndarray):

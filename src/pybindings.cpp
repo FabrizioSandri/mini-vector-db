@@ -32,6 +32,7 @@ public:
         if (array.shape(0) < 0) {
             throw py::value_error("array length cannot be negative");
         }
+
         return HNSWIndex::add(id, array.data(), static_cast<std::size_t>(array.shape(0)));
     }
 
