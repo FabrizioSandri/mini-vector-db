@@ -12,7 +12,7 @@
 using namespace std;
 
 HNSWIndex::HNSWIndex(HNSWConfig config)
-    : config_(move(config)), dim_(config_.dim), rng_(42) {}
+    : config_(move(config)), rng_(42) {}
 
 size_t HNSWIndex::random_level() {
     // l <- floor(-ln(unif(0,1)) * mL)
@@ -102,7 +102,7 @@ void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
             size_t to_prune = -1; // the index of the farthest neighbor to prune
             float max_dist = -std::numeric_limits<float>::max();
             for (size_t i = 0; i < e_conn.size(); i++) {
-                const float d = config_.distance(nodes_[neighbor_id].embedding.data(), nodes_[e_conn[i]].embedding.data(), dim_);
+                const float d = config_.distance(nodes_[neighbor_id].embedding.data(), nodes_[e_conn[i]].embedding.data(), config_.dim);
                 if (d > max_dist) {
                     max_dist = d;
                     to_prune = i;
@@ -195,7 +195,7 @@ std::vector<Candidate> HNSWIndex::search(const float *query, size_t k) const {
 
     // K-NN-SEARCH: for lc <- L ... 1, greedy descent with ef=1.
     for (size_t lc = L; lc > 0; --lc) {
-        auto layer_candidates = search_layer(query, ep, 1, lc, dim_);
+        auto layer_candidates = search_layer(query, ep, 1, lc, config_.dim);
         if (!layer_candidates.empty()) {
             ep = layer_candidates[0].second;
         }
@@ -203,7 +203,7 @@ std::vector<Candidate> HNSWIndex::search(const float *query, size_t k) const {
 
     // Final search at layer 0 must start from the descended entry point `ep`,
     // not the original global entry point.
-    const auto layer_results = search_layer(query, ep, config_.ef_search, 0, dim_);
+    const auto layer_results = search_layer(query, ep, config_.ef_search, 0, config_.dim);
 
     std::vector<Candidate> results;
     results.reserve(min(k, layer_results.size()));

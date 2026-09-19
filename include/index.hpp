@@ -46,7 +46,6 @@ private:
     };
 
     HNSWConfig config_;
-    std::size_t dim_ = 0;
     std::size_t count_ = 0;
     std::mt19937 rng_;
 
