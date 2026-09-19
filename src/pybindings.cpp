@@ -25,12 +25,20 @@ public:
                              .distance = (distance == L2) ? l2_distance : cosine_distance}) {
     }
 
-    void add(std::size_t id, py::array_t<float> array, std::size_t dim) {
-        return HNSWIndex::add(id, array.data(), dim);
+    void add(std::size_t id, py::array_t<float> array) {
+        return HNSWIndex::add(id, array.data(), array.size());
+    }
+
+    void remove(std::size_t id) {
+        return HNSWIndex::remove(id);
+    }
+
+    std::size_t size() const {
+        return HNSWIndex::size();
     }
 
     std::vector<Candidate> search(py::array_t<float> query, std::size_t k) const {
-        return HNSWIndex::search(query.data(), k);
+        return HNSWIndex::search(query.data(), k, query.size());
     }
 };
 
@@ -51,6 +59,8 @@ PYBIND11_MODULE(_core, m) {
              py::arg("ef_search") = 50,
              py::arg("max_level") = 16,
              py::arg("distance") = L2)
-        .def("add", &PyHNSWIndex::add, py::arg("id"), py::arg("vector"), py::arg("dim"))
+        .def("add", &PyHNSWIndex::add, py::arg("id"), py::arg("vector"))
+        .def("remove", &PyHNSWIndex::remove, py::arg("id"))
+        .def("size", &PyHNSWIndex::size)
         .def("search", &PyHNSWIndex::search, py::arg("query"), py::arg("k"));
 }

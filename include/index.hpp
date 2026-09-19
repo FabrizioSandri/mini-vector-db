@@ -33,8 +33,14 @@ public:
     // Add a vector with ID. dim must match consistently across calls.
     void add(std::size_t id, const float *vector, std::size_t dim);
 
+    // Remove a vector with ID
+    void remove(std::size_t id);
+
+    // Get the number of vectors in the index
+    std::size_t size() const;
+
     // k-nearest neighbors search
-    std::vector<Candidate> search(const float *query, std::size_t k) const;
+    std::vector<Candidate> search(const float *query, std::size_t k, std::size_t dim) const;
 
 private:
     struct Node {
@@ -46,7 +52,6 @@ private:
     };
 
     HNSWConfig config_;
-    std::size_t count_ = 0;
     std::mt19937 rng_;
 
     std::unordered_map<std::size_t, Node> nodes_;

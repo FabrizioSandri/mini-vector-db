@@ -50,14 +50,12 @@ void HNSWIndex::add(size_t id, const float *vec, size_t dim) {
     }
 
     const size_t l = random_level();
-    count_++;
-
     Node node =
         Node{id, l, std::vector<float>(vec, vec + dim), std::vector<std::vector<size_t>>(l + 1)};
 
     nodes_[id] = std::move(node);
-    if (count_ == 1) {
-        entry_point_ = 0;
+    if (nodes_.size() == 1) {
+        entry_point_ = id;
         return;
     }
 
@@ -183,8 +181,14 @@ HNSWIndex::search_layer(const float *query, size_t ep, size_t ef, size_t level, 
     return result;
 }
 
-std::vector<Candidate> HNSWIndex::search(const float *query, size_t k) const {
-    if (count_ == 0) {
+std::vector<Candidate> HNSWIndex::search(const float *query, size_t k, std::size_t dim) const {
+    if (dim != this->config_.dim) {
+        throw invalid_argument("Query dimension " + std::to_string(dim) +
+                               " does not match index dimension " +
+                               std::to_string(this->config_.dim) + ".");
+    }
+
+    if (nodes_.size() == 0) {
         return {};
     }
 
@@ -212,4 +216,40 @@ std::vector<Candidate> HNSWIndex::search(const float *query, size_t k) const {
         results.push_back({distance, nodes_.at(id).id});
     }
     return results;
+}
+
+void HNSWIndex::remove(size_t id) {
+    auto node = nodes_.find(id);
+    if (node == nodes_.end()) {
+        throw runtime_error("Node with ID " + std::to_string(id) + " does not exist.");
+    }
+
+    // if the node was the entry point and there are other nodes, update the entry point, by picking
+    // the node with the highest level among the remaining nodes
+    if (nodes_.size() > 1 && id == entry_point_) {
+        for (const auto &[nid, n] : nodes_) {
+            if (nid != id && n.level > nodes_[entry_point_].level) {
+                entry_point_ = nid;
+            }
+        }
+    }
+
+    // remove the node from its neighbors' neighbor lists
+    for (size_t level = 0; level <= node->second.level; ++level) {
+        for (size_t neighbor_id : node->second.neighbors[level]) {
+            auto neighbor = nodes_.find(neighbor_id);
+            if (neighbor != nodes_.end()) {
+                auto &neighbor_list = neighbor->second.neighbors[level];
+                neighbor_list.erase(std::remove(neighbor_list.begin(), neighbor_list.end(), id),
+                                    neighbor_list.end());
+            }
+        }
+    }
+
+    // remove the node from the index
+    nodes_.erase(node);
+}
+
+std::size_t HNSWIndex::size() const {
+    return nodes_.size();
 }

@@ -35,13 +35,24 @@ int main() {
 
     fmt::print("Built index with {} vectors of dimension {}\n", N, D);
 
+    // Check size
+    fmt::print("Index size: {}\n", index.size());
+
+    // Remove a vector by ID
+    size_t remove_id = 42;
+    index.remove(remove_id);
+    fmt::print("Removed vector with ID {}\n", remove_id);
+
+    // Check size
+    fmt::print("Index size: {}\n", index.size());
+
     // Query with a random vector
     for (size_t j = 0; j < D; ++j) {
         buf[j] = dist(rng);
     }
 
     const size_t k = 10;
-    auto results = index.search(buf.data(), k);
+    auto results = index.search(buf.data(), k, D);
 
     fmt::print("Top-{} neighbors:\n", k);
     for (const auto &r : results) {

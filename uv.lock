@@ -265,21 +265,23 @@ wheels = [
 name = "mvdb"
 version = "0.1.0"
 source = { editable = "." }
+dependencies = [
+    { name = "numpy" },
+]
 
 [package.dev-dependencies]
 dev = [
     { name = "ipykernel" },
-    { name = "numpy" },
     { name = "pybind11" },
     { name = "pytest" },
 ]
 
 [package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.5.3" }]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "ipykernel", specifier = ">=7.3.0" },
-    { name = "numpy", specifier = ">=2.5.3" },
     { name = "pybind11", specifier = ">=3.1.0" },
     { name = "pytest", specifier = ">=8.0" },
 ]
