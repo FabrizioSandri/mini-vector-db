@@ -93,26 +93,25 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
         const size_t cap = lc == 0 ? config_.Mmax0 : config_.Mmax;
         for (const auto& [dist, neighbor_id] : neighbors) {
             auto& e_conn = nodes_[neighbor_id]->neighbors[lc];
-            if (e_conn.size() <= cap) {
+            if (e_conn.size() <= cap || e_conn.empty()) {
                 continue;
             }
 
-            size_t to_prune = -1; // the index of the farthest neighbor to prune
-            float max_dist = -std::numeric_limits<float>::max();
-            for (size_t i = 0; i < e_conn.size(); i++) {
+            // find the index of the farthest neighbor to prune
+            auto to_prune = e_conn.begin();
+            float max_dist = config_.distance(nodes_[neighbor_id]->embedding.data(),
+                                              nodes_[*to_prune]->embedding.data(),
+                                              config_.dim);
+            for (auto it = e_conn.begin() + 1; it != e_conn.end(); it++) {
                 const float d = config_.distance(nodes_[neighbor_id]->embedding.data(),
-                                                 nodes_[e_conn[i]]->embedding.data(),
+                                                 nodes_[*it]->embedding.data(),
                                                  config_.dim);
                 if (d > max_dist) {
                     max_dist = d;
-                    to_prune = i;
+                    to_prune = it;
                 }
             }
-            if (to_prune == -1) {
-                throw runtime_error(
-                    "Failed to find a neighbor to prune, this should never happen.");
-            }
-            e_conn.erase(e_conn.begin() + to_prune);
+            e_conn.erase(to_prune);
         }
 
         // ep <- W: continue from the nearest element found at this layer.

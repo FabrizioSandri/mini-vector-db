@@ -26,7 +26,13 @@ public:
     }
 
     void add(std::size_t id, py::array_t<float> array) {
-        return HNSWIndex::add(id, array.data(), array.size());
+        if (array.ndim() != 1) {
+            throw py::value_error("array must be a 1-dimensional NumPy array");
+        }
+        if (array.shape(0) < 0) {
+            throw py::value_error("array length cannot be negative");
+        }
+        return HNSWIndex::add(id, array.data(), static_cast<std::size_t>(array.shape(0)));
     }
 
     void remove(std::size_t id) {
@@ -38,7 +44,13 @@ public:
     }
 
     std::vector<Candidate> search(py::array_t<float> query, std::size_t k) const {
-        return HNSWIndex::search(query.data(), k, query.size());
+        if (query.ndim() != 1) {
+            throw py::value_error("query must be a 1-dimensional NumPy array");
+        }
+        if (query.shape(0) < 0) {
+            throw py::value_error("query length cannot be negative");
+        }
+        return HNSWIndex::search(query.data(), k, static_cast<std::size_t>(query.shape(0)));
     }
 };
 
