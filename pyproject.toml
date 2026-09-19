@@ -1,7 +1,7 @@
 [project]
-name = "mini-vector-db"
+name = "mvdb"
 version = "0.1.0"
-description = "A mini implementation of a Vector DB based on HNSW"
+description = "MVDB (Mini Vector DB): a mini implementation of a Vector DB based on HNSW"
 authors = [
     { name = "FabrizioSandri", email = "dev.fabriziosandri@gmail.com" }
 ]
@@ -16,8 +16,13 @@ requires = [
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
-wheel.packages = ["python/mini_vector_db"]
+wheel.packages = ["python/mvdb"]
 sdist.include = ["include", "src", "CMakeLists.txt", "vcpkg.json"]
+build-dir = "build/{wheel_tag}"
+
+[tool.scikit-build.cmake.define]
+MVDB_BUILD_MAIN = "OFF"
+
 
 [dependency-groups]
 dev = [

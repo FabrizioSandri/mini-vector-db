@@ -1,9 +1,8 @@
 {
-  "name": "mini-vector-db",
+  "name": "mvdb",
   "version": "0.1.0",
   "description": "A minimal C++ HNSW-based approximate nearest neighbor vector database",
   "dependencies": [
-    "fmt",
-    "pybind11"
+    "fmt"
   ]
 }
