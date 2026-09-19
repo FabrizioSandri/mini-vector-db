@@ -56,19 +56,19 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
                           std::vector<std::vector<size_t>>(l + 1)};
 
     nodes_[id] = node;
-    if (nodes_.size() == 1) {
-        entry_point_ = id;
+    if (entry_point_ == nullptr) {
+        entry_point_ = node;
         return;
     }
 
-    size_t ep = entry_point_;
-    const size_t L = nodes_[ep]->level; // top layer of the graph, *before* this insertion
+    Node* ep = entry_point_;
+    const size_t L = entry_point_->level; // top layer of the graph, *before* this insertion
 
     // Phase 1: greedy descent with ef=1.
     for (size_t lc = L; lc > l; lc--) {
         auto candidates = search_layer(vec, ep, 1, lc, dim);
         if (!candidates.empty()) {
-            ep = candidates[0].second;
+            ep = nodes_[candidates[0].second];
         }
     }
 
@@ -116,33 +116,34 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
 
         // ep <- W: continue from the nearest element found at this layer.
         if (!candidates.empty()) {
-            ep = min_element(
-                     candidates.begin(),
-                     candidates.end(),
-                     [](const Candidate& a, const Candidate& b) { return a.first < b.first; })
-                     ->second;
+            ep = nodes_[min_element(candidates.begin(),
+                                    candidates.end(),
+                                    [](const Candidate& a, const Candidate& b) {
+                                        return a.first < b.first;
+                                    })
+                            ->second];
         }
     }
 
     // Update the global entry point if the new node is at a higher level than the previous entry
     // point.
     if (l > L) {
-        entry_point_ = id;
+        entry_point_ = node;
     }
 }
 
 vector<Candidate>
-HNSWIndex::search_layer(const float* query, size_t ep, size_t ef, size_t level, size_t dim) const {
+HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, size_t dim) const {
 
     priority_queue<Candidate, vector<Candidate>, greater<>> candidates; // Min-priority queue C
     priority_queue<Candidate> max_queue;                                // Max-priority queue W
     std::set<size_t> seen;
 
-    const float ep_dist = config_.distance(query, nodes_.at(ep)->embedding.data(), dim);
+    const float ep_dist = config_.distance(query, ep->embedding.data(), dim);
 
-    max_queue.emplace(ep_dist, ep);
-    candidates.emplace(ep_dist, ep);
-    seen.insert(ep);
+    max_queue.emplace(ep_dist, ep->id);
+    candidates.emplace(ep_dist, ep->id);
+    seen.insert(ep->id);
 
     while (!candidates.empty()) {
         const auto [dc, closest] = candidates.top(); // extract nearest element from candidates to q
@@ -193,14 +194,14 @@ std::vector<Candidate> HNSWIndex::search(const float* query, size_t k, std::size
         return {};
     }
 
-    size_t ep = entry_point_;
-    const size_t L = nodes_.at(entry_point_)->level;
+    Node* ep = entry_point_;
+    const size_t L = entry_point_->level;
 
     // K-NN-SEARCH: for lc <- L ... 1, greedy descent with ef=1.
     for (size_t lc = L; lc > 0; --lc) {
         auto layer_candidates = search_layer(query, ep, 1, lc, config_.dim);
         if (!layer_candidates.empty()) {
-            ep = layer_candidates[0].second;
+            ep = nodes_.at(layer_candidates[0].second);
         }
     }
 
@@ -227,10 +228,10 @@ void HNSWIndex::remove(size_t id) {
 
     // if the node was the entry point and there are other nodes, update the entry point, by picking
     // the node with the highest level among the remaining nodes
-    if (nodes_.size() > 1 && id == entry_point_) {
+    if (nodes_.size() > 1 && id == entry_point_->id) {
         for (const auto& [nid, n] : nodes_) {
-            if (nid != id && n->level > nodes_[entry_point_]->level) {
-                entry_point_ = nid;
+            if (nid != id && n->level > entry_point_->level) {
+                entry_point_ = n;
             }
         }
     }
@@ -251,8 +252,18 @@ void HNSWIndex::remove(size_t id) {
     Node* node_to_delete = node_it->second;
     nodes_.erase(node_it);
     delete node_to_delete;
+
+    if (nodes_.empty()) {
+        entry_point_ = nullptr;
+    }
 }
 
 std::size_t HNSWIndex::size() const {
     return nodes_.size();
+}
+
+HNSWIndex::~HNSWIndex() {
+    for (const auto& [id, node] : nodes_) {
+        delete node;
+    }
 }

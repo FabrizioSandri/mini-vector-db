@@ -30,6 +30,8 @@ class HNSWIndex {
 public:
     explicit HNSWIndex(HNSWConfig config = HNSWConfig{});
 
+    ~HNSWIndex();
+
     // Add a vector with ID. dim must match consistently across calls.
     void add(std::size_t id, const float* vector, std::size_t dim);
 
@@ -55,13 +57,13 @@ private:
     std::mt19937 rng_;
 
     std::unordered_map<std::size_t, Node*> nodes_;
-    std::size_t entry_point_ = 0;
+    Node* entry_point_ = nullptr;
 
     // Internal helpers
     std::size_t random_level();
 
     std::vector<Candidate> search_layer(const float* query,
-                                        std::size_t ep,
+                                        Node* ep,
                                         std::size_t ef,
                                         std::size_t level,
                                         std::size_t dim) const;
