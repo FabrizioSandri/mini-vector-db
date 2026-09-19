@@ -5,13 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# scikit-build-core defines SKBUILD, so bindings are on by default only there
-if(SKBUILD)
-  set(_mvdb_py_default ON)
-else()
-  set(_mvdb_py_default OFF)
-endif()
-option(MVDB_BUILD_PYTHON "Build the Python bindings" ${_mvdb_py_default})
+option(MVDB_BUILD_PYTHON "Build the Python bindings" OFF)
 option(MVDB_BUILD_MAIN "Build the main executable" ON)
 
 
@@ -48,6 +42,6 @@ if(MVDB_BUILD_PYTHON)
   find_package(pybind11 CONFIG REQUIRED)
   pybind11_add_module(_core src/pybindings.cpp)
   target_link_libraries(_core PRIVATE mvdb)
-  install(TARGETS _core LIBRARY DESTINATION mvdb)
+  set_target_properties(_core PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python/mvdb")
 endif()
-

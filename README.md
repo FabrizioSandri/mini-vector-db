@@ -1,6 +1,10 @@
 ```
-cmake -S . -B build --fresh \
+cmake -S . -B build/cpp --fresh \
   -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake
 
-cmake --build build
+cmake --build build/cpp
+```
+
+```
+uv run bash build.sh
 ```

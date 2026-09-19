@@ -9,24 +9,17 @@ requires-python = ">=3.13"
 dependencies = []
 
 [build-system]
-requires = [
-  "scikit-build-core>=0.10",
-  "pybind11>=2.13",
-]
-build-backend = "scikit_build_core.build"
+requires = ["uv_build>=0.12.17,<0.13"]
+build-backend = "uv_build"
 
-[tool.scikit-build]
-wheel.packages = ["python/mvdb"]
-sdist.include = ["include", "src", "CMakeLists.txt", "vcpkg.json"]
-build-dir = "build/{wheel_tag}"
-
-[tool.scikit-build.cmake.define]
-MVDB_BUILD_MAIN = "OFF"
-
+[tool.uv.build-backend]
+module-root = "python"
+module-name = "mvdb"
 
 [dependency-groups]
 dev = [
   "ipykernel>=7.3.0",
   "numpy>=2.5.3",
   "pytest>=8.0",
+  "pybind11>=3.1.0"
 ]
