@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "A minimal C++ HNSW-based approximate nearest neighbor vector database",
   "dependencies": [
-    "fmt"
+    "fmt",
+    "pybind11"
   ]
 }

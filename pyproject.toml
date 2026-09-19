@@ -1,0 +1,27 @@
+[project]
+name = "mini-vector-db"
+version = "0.1.0"
+description = "A mini implementation of a Vector DB based on HNSW"
+authors = [
+    { name = "FabrizioSandri", email = "dev.fabriziosandri@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = [
+  "scikit-build-core>=0.10",
+  "pybind11>=2.13",
+]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+wheel.packages = ["python/mini_vector_db"]
+sdist.include = ["include", "src", "CMakeLists.txt", "vcpkg.json"]
+
+[dependency-groups]
+dev = [
+  "ipykernel>=7.3.0",
+  "numpy>=2.5.3",
+  "pytest>=8.0",
+]

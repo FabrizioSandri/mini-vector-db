@@ -1,0 +1,24 @@
+BasedOnStyle: LLVM
+Language: Cpp
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+ColumnLimit: 100
+IndentAccessModifiers: true
+
+# Wrapped function calls: one argument on each line.
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: false
+
+# Wrapped declarations / definitions: one parameter on each line.
+BinPackParameters: false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# Format constructor member-initializer lists consistently when they wrap.
+BreakConstructorInitializers: AfterColon
+PackConstructorInitializers: Never
+
+# Do not collapse short bodies such as: Foo() {}
+AllowShortFunctionsOnASingleLine: None

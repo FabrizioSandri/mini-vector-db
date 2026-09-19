@@ -15,6 +15,8 @@ else()
 endif()
 
 
+set(PYBIND11_FINDPYTHON ON)
+find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
@@ -53,8 +55,5 @@ target_link_libraries(_core
 # Executables
 add_executable(main src/main.cpp)
 target_link_libraries(main PRIVATE mini_vector_db fmt::fmt)
-
-add_executable(recall_benchmark src/recall.cpp)
-target_link_libraries(recall_benchmark PRIVATE mini_vector_db fmt::fmt)
 
 install(TARGETS _core LIBRARY DESTINATION mini_vector_db)
