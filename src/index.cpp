@@ -1,13 +1,11 @@
-#include "index.hpp"
-
 #include <algorithm>
 #include <cmath>
 #include <fstream>
-#include <iostream>
-#include <limits>
 #include <queue>
-#include <set>
 #include <stdexcept>
+#include <unordered_set>
+
+#include "index.hpp"
 
 using namespace std;
 
@@ -137,7 +135,7 @@ HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, s
 
     priority_queue<Candidate, vector<Candidate>, greater<>> candidates; // Min-priority queue C
     priority_queue<Candidate> max_queue;                                // Max-priority queue W
-    std::set<size_t> seen;
+    std::unordered_set<size_t> seen;
 
     const float ep_dist = config_.distance(query, ep->embedding.data(), dim);
 

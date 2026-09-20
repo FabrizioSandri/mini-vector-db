@@ -2,15 +2,12 @@
 #define __INDEX_HPP__
 
 #include <cstddef>
-#include <cstdint>
-#include <memory>
 #include <random>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "distance.hpp"
-#include <algorithm>
 
 using Candidate = std::pair<float, std::size_t>; // (distance, id)
 
