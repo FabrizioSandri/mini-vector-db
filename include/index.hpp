@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <random>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -48,6 +49,8 @@ private:
         std::vector<float> embedding; // dim floats
         // Neighbors per layer: [level][neighbor ids]
         std::vector<std::vector<std::size_t>> neighbors;
+        std::vector<std::unordered_set<std::size_t>>
+            incoming_neighbors; // for reverse edges. Used for pruning when removing nodes.
     };
 
     HNSWConfig config_;

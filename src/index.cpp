@@ -1,9 +1,12 @@
 #include <algorithm>
 #include <cmath>
-#include <fstream>
+#include <functional>
 #include <queue>
+#include <random>
 #include <stdexcept>
+#include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "index.hpp"
 
@@ -51,7 +54,8 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     Node* node = new Node{id,
                           l,
                           std::vector<float>(vec, vec + dim),
-                          std::vector<std::vector<size_t>>(l + 1)};
+                          std::vector<std::vector<size_t>>(l + 1),
+                          std::vector<std::unordered_set<size_t>>(l + 1)};
 
     nodes_[id] = node;
     if (entry_point_ == nullptr) {
@@ -77,8 +81,13 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
 
         // Add bidirectional connections from neighbors to q at layer lc
         for (const auto& [dist, neighbor_id] : neighbors) {
-            nodes_[id]->neighbors[lc].push_back(neighbor_id);
+            // edge: new node -> neighbor
+            node->neighbors[lc].push_back(neighbor_id);
+            nodes_[neighbor_id]->incoming_neighbors[lc].insert(id);
+
+            // edge: neighbor -> new node
             nodes_[neighbor_id]->neighbors[lc].push_back(id);
+            node->incoming_neighbors[lc].insert(neighbor_id);
         }
 
         // Shrink connections of each neighbor if it now exceeds Mmax at this layer.
@@ -99,16 +108,18 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
             auto to_prune = e_conn.begin();
             float max_dist = config_.distance(nodes_[neighbor_id]->embedding.data(),
                                               nodes_[*to_prune]->embedding.data(),
-                                              config_.dim);
+                                              dim);
             for (auto it = e_conn.begin() + 1; it != e_conn.end(); it++) {
                 const float d = config_.distance(nodes_[neighbor_id]->embedding.data(),
                                                  nodes_[*it]->embedding.data(),
-                                                 config_.dim);
+                                                 dim);
                 if (d > max_dist) {
                     max_dist = d;
                     to_prune = it;
                 }
             }
+
+            nodes_[*to_prune]->incoming_neighbors[lc].erase(neighbor_id);
             e_conn.erase(to_prune);
         }
 
@@ -197,7 +208,7 @@ std::vector<Candidate> HNSWIndex::search(const float* query, size_t k, std::size
 
     // K-NN-SEARCH: for lc <- L ... 1, greedy descent with ef=1.
     for (size_t lc = L; lc > 0; --lc) {
-        auto layer_candidates = search_layer(query, ep, 1, lc, config_.dim);
+        auto layer_candidates = search_layer(query, ep, 1, lc, dim);
         if (!layer_candidates.empty()) {
             ep = nodes_.at(layer_candidates[0].second);
         }
@@ -205,7 +216,7 @@ std::vector<Candidate> HNSWIndex::search(const float* query, size_t k, std::size
 
     // Final search at layer 0 must start from the descended entry point `ep`,
     // not the original global entry point.
-    const auto layer_results = search_layer(query, ep, config_.ef_search, 0, config_.dim);
+    const auto layer_results = search_layer(query, ep, config_.ef_search, 0, dim);
 
     std::vector<Candidate> results;
     results.reserve(min(k, layer_results.size()));
@@ -223,37 +234,38 @@ void HNSWIndex::remove(size_t id) {
     if (node_it == nodes_.end()) {
         throw runtime_error("Node with ID " + std::to_string(id) + " does not exist.");
     }
+    Node* node = node_it->second;
 
     // if the node was the entry point and there are other nodes, update the entry point, by picking
     // the node with the highest level among the remaining nodes
     if (nodes_.size() > 1 && id == entry_point_->id) {
+        Node* best = nullptr;
         for (const auto& [nid, n] : nodes_) {
-            if (nid != id && n->level > entry_point_->level) {
-                entry_point_ = n;
-            }
+            if (nid == id)
+                continue;
+            if (!best || n->level > best->level)
+                best = n;
         }
+        entry_point_ = best;
     }
 
     // remove the node from its neighbors' neighbor lists
-    for (size_t level = 0; level <= node_it->second->level; ++level) {
-        for (size_t neighbor_id : node_it->second->neighbors[level]) {
-            auto neighbor = nodes_.find(neighbor_id);
-            if (neighbor != nodes_.end()) {
-                auto& neighbor_list = neighbor->second->neighbors[level];
-                neighbor_list.erase(std::remove(neighbor_list.begin(), neighbor_list.end(), id),
-                                    neighbor_list.end());
-            }
+    for (size_t lvl = 0; lvl <= node->level; ++lvl) {
+        // Outgoing edges (node -> o): o no longer has an incoming edge from node.
+        for (size_t out_id : node->neighbors[lvl]) {
+            nodes_.at(out_id)->incoming_neighbors[lvl].erase(id);
+        }
+
+        // Incoming edges (p -> node): remove the dangling forward edge from p.
+        for (size_t in_id : node->incoming_neighbors[lvl]) {
+            auto& list = nodes_.at(in_id)->neighbors[lvl];
+            list.erase(std::remove(list.begin(), list.end(), id), list.end());
         }
     }
 
     // remove the node from the index and deallocate its memory
-    Node* node_to_delete = node_it->second;
     nodes_.erase(node_it);
-    delete node_to_delete;
-
-    if (nodes_.empty()) {
-        entry_point_ = nullptr;
-    }
+    delete node;
 }
 
 std::size_t HNSWIndex::size() const {
