@@ -15,6 +15,19 @@ using namespace std;
 HNSWIndex::HNSWIndex(HNSWConfig config) :
     config_(move(config)),
     rng_(42) {
+
+    if (config_.dim <= 0) {
+        throw invalid_argument("Vector dimension must be greater than 0.");
+    }
+
+    if (config_.M <= 0) {
+        throw invalid_argument("M must be greater than 0.");
+    }
+
+    if (config.Mmax0 < config.M || config.Mmax < config.M || config.Mmax0 < 1 || config.Mmax < 1) {
+        throw invalid_argument(
+            "Mmax0 and Mmax must be greater than or equal to M and greater than 0.");
+    }
 }
 
 size_t HNSWIndex::random_level() {
@@ -100,7 +113,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
         const size_t cap = lc == 0 ? config_.Mmax0 : config_.Mmax;
         for (const auto& [dist, neighbor_id] : neighbors) {
             auto& e_conn = nodes_[neighbor_id]->neighbors[lc];
-            if (e_conn.size() <= cap || e_conn.empty()) {
+            if (e_conn.size() <= cap) {
                 continue;
             }
 
