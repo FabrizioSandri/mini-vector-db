@@ -16,18 +16,18 @@ HNSWIndex::HNSWIndex(HNSWConfig config) :
     config_(move(config)),
     rng_(42) {
 
-    if (config_.dim <= 0) {
+    if (config_.dim <= 0)
         throw invalid_argument("Vector dimension must be greater than 0.");
-    }
 
-    if (config_.M <= 0) {
+    if (config_.M <= 0)
         throw invalid_argument("M must be greater than 0.");
-    }
 
-    if (config.Mmax0 < config.M || config.Mmax < config.M || config.Mmax0 < 1 || config.Mmax < 1) {
+    if (config.Mmax0 < config.M || config.Mmax < config.M || config.Mmax0 < 1 || config.Mmax < 1)
         throw invalid_argument(
             "Mmax0 and Mmax must be greater than or equal to M and greater than 0.");
-    }
+
+    if (config_.ef_search == 0)
+        throw invalid_argument("ef_search must be greater than 0.");
 }
 
 size_t HNSWIndex::random_level() {
@@ -167,22 +167,22 @@ HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, s
     candidates.emplace(ep_dist, ep->id);
     seen.insert(ep->id);
 
+    float df = ep_dist; // distance of the furthest element in W
+
     while (!candidates.empty()) {
         const auto [dc, closest] = candidates.top(); // extract nearest element from candidates to q
-        const auto [df, furthest] = max_queue.top(); // extract farthest element from visited
 
         if (dc > df) {
             break;
         }
-
         candidates.pop();
+
         for (size_t nb : nodes_.at(closest)->neighbors[level]) {
-            if (seen.find(nb) != seen.end()) {
+            if (!seen.insert(nb).second) {
                 continue;
             }
-            seen.insert(nb);
+
             const float nd = config_.distance(query, nodes_.at(nb)->embedding.data(), dim);
-            const auto [df, furthest] = max_queue.top(); // extract farthest element from visited
 
             if (nd < df || max_queue.size() < ef) {
                 candidates.emplace(nd, nb);
@@ -191,14 +191,16 @@ HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, s
                 if (max_queue.size() > ef) {
                     max_queue.pop();
                 }
+                df = max_queue.top().first;
             }
         }
     }
+
     vector<Candidate> result;
+    result.reserve(max_queue.size());
     while (!max_queue.empty()) {
-        const auto [d, id] = max_queue.top();
+        result.push_back(max_queue.top());
         max_queue.pop();
-        result.push_back({d, id});
     }
     reverse(result.begin(), result.end());
 
@@ -229,7 +231,8 @@ std::vector<Candidate> HNSWIndex::search(const float* query, size_t k, std::size
 
     // Final search at layer 0 must start from the descended entry point `ep`,
     // not the original global entry point.
-    const auto layer_results = search_layer(query, ep, config_.ef_search, 0, dim);
+    const size_t ef = std::max(config_.ef_search, k);
+    const auto layer_results = search_layer(query, ep, ef, 0, dim);
 
     std::vector<Candidate> results;
     results.reserve(min(k, layer_results.size()));

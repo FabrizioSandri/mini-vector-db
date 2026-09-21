@@ -12,7 +12,7 @@ option(MVDB_BUILD_MAIN "Build the main executable" ON)
 if(MSVC)
   add_compile_options(/W4 /WX-)
 else()
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion)
+  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Wunused)
 endif()
 
 
