@@ -47,10 +47,12 @@ private:
         std::size_t id;
         std::size_t level;
         std::vector<float> embedding; // dim floats
+
         // Neighbors per layer: [level][neighbor ids]
         std::vector<std::vector<std::size_t>> neighbors;
-        std::vector<std::unordered_set<std::size_t>>
-            incoming_neighbors; // for reverse edges. Used for pruning when removing nodes.
+
+        // for reverse edges. Used for pruning when removing nodes.
+        std::vector<std::unordered_set<std::size_t>> incoming_neighbors;
     };
 
     HNSWConfig config_;
