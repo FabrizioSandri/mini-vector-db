@@ -56,7 +56,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     const size_t l = random_level();
     Node* node = new Node{id,
                           l,
-                          std::vector<float>(vec, vec + dim),
+                          vec,
                           std::vector<std::vector<size_t>>(l + 1),
                           std::vector<std::unordered_set<size_t>>(l + 1)};
 
@@ -116,13 +116,11 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
 
             // find the index of the farthest neighbor to prune
             auto to_prune = e_conn.begin();
-            float max_dist = config_.distance(nodes_[neighbor_id]->embedding.data(),
-                                              nodes_[*to_prune]->embedding.data(),
-                                              dim);
+            float max_dist =
+                config_.distance(nodes_[neighbor_id]->embedding, nodes_[*to_prune]->embedding, dim);
             for (auto it = e_conn.begin() + 1; it != e_conn.end(); it++) {
-                const float d = config_.distance(nodes_[neighbor_id]->embedding.data(),
-                                                 nodes_[*it]->embedding.data(),
-                                                 dim);
+                const float d =
+                    config_.distance(nodes_[neighbor_id]->embedding, nodes_[*it]->embedding, dim);
                 if (d > max_dist) {
                     max_dist = d;
                     to_prune = it;
@@ -154,7 +152,7 @@ HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, s
     priority_queue<Candidate> max_queue;                                // Max-priority queue W
     std::unordered_set<size_t> seen;
 
-    const float ep_dist = config_.distance(query, ep->embedding.data(), dim);
+    const float ep_dist = config_.distance(query, ep->embedding, dim);
 
     max_queue.emplace(ep_dist, ep->id);
     candidates.emplace(ep_dist, ep->id);
@@ -175,7 +173,7 @@ HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, s
                 continue;
             }
 
-            const float nd = config_.distance(query, nodes_.at(nb)->embedding.data(), dim);
+            const float nd = config_.distance(query, nodes_.at(nb)->embedding, dim);
 
             if (nd < df || max_queue.size() < ef) {
                 candidates.emplace(nd, nb);
@@ -318,8 +316,7 @@ std::vector<Candidate> HNSWIndex::select_neighbors_heuristic(const float* query,
             }
             for (size_t c_adj : it->second->neighbors[lc]) {
                 if (in_w.insert(c_adj).second) {
-                    const float d =
-                        config_.distance(query, nodes_.at(c_adj)->embedding.data(), dim);
+                    const float d = config_.distance(query, nodes_.at(c_adj)->embedding, dim);
                     W.emplace(d, c_adj);
                 }
             }
@@ -334,15 +331,14 @@ std::vector<Candidate> HNSWIndex::select_neighbors_heuristic(const float* query,
         const Candidate e = W.top();
         W.pop();
 
-        const float* e_vec = nodes_.at(e.second)->embedding.data();
+        const float* e_vec = nodes_.at(e.second)->embedding;
 
         // Diversity test: keep e only if it's closer to q than to every
         // element already selected into R (this is what "closer to q
         // compared to any element from R" actually encodes).
         bool keep = true;
         for (const auto& r : R) {
-            const float dist_e_r =
-                config_.distance(e_vec, nodes_.at(r.second)->embedding.data(), dim);
+            const float dist_e_r = config_.distance(e_vec, nodes_.at(r.second)->embedding, dim);
             if (dist_e_r < e.first) {
                 keep = false;
                 break;

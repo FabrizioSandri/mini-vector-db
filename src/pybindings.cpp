@@ -13,7 +13,7 @@ class PyHNSWIndex : private HNSWIndex {
 public:
     PyHNSWIndex(std::size_t dim,
                 std::size_t M = 16,
-                std::size_t ef_construction = 200,
+                std::size_t ef_construction = 100,
                 std::size_t ef_search = 50,
                 std::size_t max_level = 16,
                 Distance distance = L2) :
@@ -68,7 +68,7 @@ PYBIND11_MODULE(_core, m) {
         .def(py::init<std::size_t, std::size_t, std::size_t, std::size_t, std::size_t, Distance>(),
              py::arg("dim"),
              py::arg("M") = 16,
-             py::arg("ef_construction") = 200,
+             py::arg("ef_construction") = 100,
              py::arg("ef_search") = 50,
              py::arg("max_level") = 16,
              py::arg("distance") = L2)

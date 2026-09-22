@@ -50,7 +50,7 @@ private:
     struct Node {
         std::size_t id;
         std::size_t level;
-        std::vector<float> embedding; // dim floats
+        const float* embedding; // dim floats
 
         // Neighbors per layer: [level][neighbor ids]
         std::vector<std::vector<std::size_t>> neighbors;

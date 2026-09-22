@@ -16,7 +16,7 @@ int main() {
     HNSWConfig cfg;
     cfg.dim = D;
     cfg.M = 16;
-    cfg.ef_construction = 200;
+    cfg.ef_construction = 100;
     cfg.ef_search = 50;
     cfg.distance = l2_distance;
 

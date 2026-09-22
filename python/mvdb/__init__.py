@@ -29,7 +29,7 @@ class MVDB:
         self,
         dim: int,
         M: int = 16,
-        ef_construction: int = 200,
+        ef_construction: int = 100,
         ef_search: int = 50,
         max_level: int = 16,
         distance: Distance = Distance.L2,
