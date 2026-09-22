@@ -15,12 +15,16 @@ using Candidate = std::pair<float, std::size_t>; // (distance, id)
 struct HNSWConfig {
     std::size_t dim;                   // Dimensionality of the vectors
     std::size_t M = 16;                // Connections assigned to a newly inserted node
-    std::size_t ef_construction = 200; // Size of dynamic candidate list during build
+    std::size_t ef_construction = 100; // Size of dynamic candidate list during build
     std::size_t ef_search = 50;        // Size of dynamic candidate list during search
     std::size_t max_level = 16;        // Safety cap on number of layers
     DistanceFunc distance = l2_distance;
     std::size_t Mmax0 = 2 * M;
     std::size_t Mmax = M;
+    bool keep_pruned_connections =
+        false; // If true, pad R with nearest discarded candidates when heuristic yields < M
+    bool extend_candidates =
+        true; // If true, also consider neighbors-of-candidates in the heuristic search
     double mL_ = 1.0 / log(std::max((int)M, 2)); // 1/ln(M)
 };
 
@@ -72,6 +76,14 @@ private:
 
     std::vector<Candidate> select_neighbors_simple(std::vector<Candidate> candidates,
                                                    std::size_t M) const;
+
+    std::vector<Candidate> select_neighbors_heuristic(const float* query,
+                                                      const std::vector<Candidate>& C,
+                                                      std::size_t M,
+                                                      std::size_t lc,
+                                                      std::size_t dim,
+                                                      bool extend_candidates,
+                                                      bool keep_pruned_connections) const;
 };
 
 #endif

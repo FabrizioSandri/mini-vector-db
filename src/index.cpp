@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "index.hpp"
+#include "utils.hpp"
 
 using namespace std;
 
@@ -39,17 +40,6 @@ size_t HNSWIndex::random_level() {
     }
     const size_t level = static_cast<size_t>(std::floor(-std::log(r) * this->config_.mL_));
     return min(level, config_.max_level);
-}
-
-vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidates, size_t M) const {
-    // return the M nearest elements to q from candidates
-    sort(candidates.begin(), candidates.end(), [](const Candidate& a, const Candidate& b) {
-        return a.first < b.first;
-    });
-    if (candidates.size() > M) {
-        candidates.resize(M);
-    }
-    return candidates;
 }
 
 void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
@@ -90,7 +80,14 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     // Phase 2: real search + insertion.
     for (size_t lc = min(L, l) + 1; lc-- > 0;) {
         auto candidates = search_layer(vec, ep, config_.ef_construction, lc, dim);
-        auto neighbors = select_neighbors_simple(candidates, config_.M);
+        // auto neighbors = select_neighbors_simple(candidates, config_.M);
+        auto neighbors = select_neighbors_heuristic(vec,
+                                                    candidates,
+                                                    config_.M,
+                                                    lc,
+                                                    dim,
+                                                    config_.extend_candidates,
+                                                    config_.keep_pruned_connections);
 
         // Add bidirectional connections from neighbors to q at layer lc
         for (const auto& [dist, neighbor_id] : neighbors) {
@@ -138,11 +135,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
 
         // ep <- W: continue from the nearest element found at this layer.
         if (!candidates.empty()) {
-            ep = nodes_[min_element(candidates.begin(),
-                                    candidates.end(),
-                                    [](const Candidate& a, const Candidate& b) {
-                                        return a.first < b.first;
-                                    })
+            ep = nodes_[min_element(candidates.begin(), candidates.end(), compare_lowest_first)
                             ->second];
         }
     }
@@ -282,6 +275,97 @@ void HNSWIndex::remove(size_t id) {
     // remove the node from the index and deallocate its memory
     nodes_.erase(node_it);
     delete node;
+}
+
+vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidates, size_t M) const {
+    if (candidates.size() > M) {
+        nth_element(candidates.begin(),
+                    candidates.begin() + M,
+                    candidates.end(),
+                    compare_lowest_first);
+        candidates.resize(M);
+    }
+
+    // Only sort the M survivors.
+    sort(candidates.begin(), candidates.end(), compare_lowest_first);
+    return candidates;
+}
+
+std::vector<Candidate> HNSWIndex::select_neighbors_heuristic(const float* query,
+                                                             const std::vector<Candidate>& C,
+                                                             std::size_t M,
+                                                             std::size_t lc,
+                                                             std::size_t dim,
+                                                             bool extend_candidates,
+                                                             bool keep_pruned_connections) const {
+
+    // W: working set of candidates, as a min-heap ordered by distance to q.
+    priority_queue<Candidate, vector<Candidate>, greater<>> W;
+    unordered_set<size_t> in_w;
+
+    for (const auto& c : C) {
+        if (in_w.insert(c.second).second) {
+            W.push(c);
+        }
+    }
+
+    // extendCandidates: pull in each candidate's neighbors at this layer too.
+    if (extend_candidates) {
+        for (const auto& c : C) {
+            auto it = nodes_.find(c.second);
+            if (it == nodes_.end()) {
+                continue;
+            }
+            for (size_t c_adj : it->second->neighbors[lc]) {
+                if (in_w.insert(c_adj).second) {
+                    const float d =
+                        config_.distance(query, nodes_.at(c_adj)->embedding.data(), dim);
+                    W.emplace(d, c_adj);
+                }
+            }
+        }
+    }
+
+    vector<Candidate> R;
+    R.reserve(M);
+    vector<Candidate> Wd; // discarded candidates, kept sorted-on-demand below
+
+    while (!W.empty() && R.size() < M) {
+        const Candidate e = W.top();
+        W.pop();
+
+        const float* e_vec = nodes_.at(e.second)->embedding.data();
+
+        // Diversity test: keep e only if it's closer to q than to every
+        // element already selected into R (this is what "closer to q
+        // compared to any element from R" actually encodes).
+        bool keep = true;
+        for (const auto& r : R) {
+            const float dist_e_r =
+                config_.distance(e_vec, nodes_.at(r.second)->embedding.data(), dim);
+            if (dist_e_r < e.first) {
+                keep = false;
+                break;
+            }
+        }
+
+        if (keep) {
+            R.push_back(e);
+        } else if (keep_pruned_connections) {
+            Wd.push_back(e);
+        }
+    }
+
+    // keepPrunedConnections: top up R from the discarded set, nearest first.
+    if (keep_pruned_connections && R.size() < M && !Wd.empty()) {
+        sort(Wd.begin(), Wd.end(), compare_lowest_first);
+        size_t idx = 0;
+        while (R.size() < M && idx < Wd.size()) {
+            R.push_back(Wd[idx++]);
+        }
+    }
+
+    return R;
 }
 
 std::size_t HNSWIndex::size() const {
