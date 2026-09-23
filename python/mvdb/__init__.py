@@ -54,6 +54,7 @@ class MVDB:
             max_level=max_level,
             distance=distance.value,
         )
+        self._vectors = {}
 
     def add(self, id: int, vector: np.ndarray):
         """Insert or update a vector in the index.
@@ -62,7 +63,9 @@ class MVDB:
             id: Unique identifier associated with the vector.
             vector: A one-dimensional NumPy array containing the vector values.
         """
-        self.index.add(id, vector)
+        contiguous_vector = np.ascontiguousarray(vector, dtype=np.float32)
+        self._vectors[id] = contiguous_vector
+        self.index.add(id, contiguous_vector)
 
     def remove(self, id: int):
         """Remove a vector from the index.
@@ -71,12 +74,13 @@ class MVDB:
             id: Identifier of the vector to remove.
         """
         self.index.remove(id)
+        del self._vectors[id]
 
     def size(self) -> int:
         """Return the current number of vectors stored in the index."""
         return self.index.size()
 
-    def search(self, query: list[float], k: int) -> list[tuple[int, float]]:
+    def search(self, query: list[float], k: int) -> list[tuple[float, int]]:
         """Search for the `k` nearest vectors to a query.
 
         Args:
@@ -84,9 +88,9 @@ class MVDB:
             k: Maximum number of results to return.
 
         Returns:
-            A list of `(id, distance)` tuples sorted from nearest to farthest.
+            A list of `(distance, id)` tuples sorted from nearest to farthest.
         """
-        return self.index.search(query, k)
+        return self.index.search(np.ascontiguousarray(query, dtype=np.float32), k)
 
 
 __all__ = ["MVDB", "Distance"]

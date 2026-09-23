@@ -278,7 +278,7 @@ void HNSWIndex::remove(size_t id) {
 vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidates, size_t M) const {
     if (candidates.size() > M) {
         nth_element(candidates.begin(),
-                    candidates.begin() + M,
+                    candidates.begin() + static_cast<std::vector<Candidate>::difference_type>(M),
                     candidates.end(),
                     compare_lowest_first);
         candidates.resize(M);
