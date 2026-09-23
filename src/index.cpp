@@ -35,9 +35,7 @@ size_t HNSWIndex::random_level() {
     // l <- floor(-ln(unif(0,1)) * mL)
     uniform_real_distribution<double> dist(0.0, 1.0);
     double r = dist(rng_);
-    while (r <= 0.0) { // guard against log(0)
-        r = dist(rng_);
-    }
+    r = (r == 0.0) ? 1.0 : r; // guard against log(0)
     const size_t level = static_cast<size_t>(std::floor(-std::log(r) * this->config_.mL_));
     return min(level, config_.max_level);
 }

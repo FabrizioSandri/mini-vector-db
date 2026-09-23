@@ -69,3 +69,4 @@ Testing/
 .cache/
 __pycache__
 .cmake
+data

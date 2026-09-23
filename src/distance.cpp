@@ -11,9 +11,7 @@ float l2_distance(const float* a, const float* b, std::size_t dim) {
 }
 
 float cosine_distance(const float* a, const float* b, std::size_t dim) {
-    float dot = 0.0f;
-    float norm_a = 0.0f;
-    float norm_b = 0.0f;
+    float dot = 0.0f, norm_a = 0.0f, norm_b = 0.0f;
     for (std::size_t i = 0; i < dim; ++i) {
         dot += a[i] * b[i];
         norm_a += a[i] * a[i];
