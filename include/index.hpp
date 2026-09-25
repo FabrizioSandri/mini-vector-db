@@ -24,7 +24,7 @@ struct HNSWConfig {
     bool keep_pruned_connections =
         false; // If true, pad R with nearest discarded candidates when heuristic yields < M
     bool extend_candidates =
-        true; // If true, also consider neighbors-of-candidates in the heuristic search
+        false; // If true, also consider neighbors-of-candidates in the heuristic search
     double mL_ = 1.0 / log(std::max((int)M, 2)); // 1/ln(M)
 };
 
