@@ -9,8 +9,8 @@ using namespace std;
 
 int main() {
 
-    // Demo: build a tiny index of 1000 random 128-d vectors
-    const size_t N = 1000;
+    // Demo: build a tiny index of 10000 random 128-d vectors
+    const size_t N = 10000;
     const size_t D = 128;
 
     HNSWConfig cfg;

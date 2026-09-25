@@ -30,7 +30,7 @@ target_include_directories(mvdb PUBLIC
 # Executable
 if(MVDB_BUILD_MAIN)
   find_package(fmt CONFIG REQUIRED)
-  add_executable(main src/main.cpp)
+  add_executable(main tests/main.cpp)
   target_link_libraries(main PRIVATE mvdb fmt::fmt)
 endif()
 
