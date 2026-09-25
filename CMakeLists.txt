@@ -15,7 +15,6 @@ else()
   add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Wunused)
 endif()
 
-
 # Core library 
 add_library(mvdb STATIC
   src/index.cpp
