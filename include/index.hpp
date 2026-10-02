@@ -1,6 +1,7 @@
 #ifndef __INDEX_HPP__
 #define __INDEX_HPP__
 
+#include <cmath>
 #include <cstddef>
 #include <random>
 #include <unordered_map>
