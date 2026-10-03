@@ -54,7 +54,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     const size_t l = random_level();
     const size_t embedding_offset = embeddings_.size();
     this->embeddings_.insert(embeddings_.end(), vec, vec + dim);
-    Node* node = new Node{id, l, embedding_offset, std::vector<std::vector<Node*>>(l + 1)};
+    Node* node = new Node{id, l, embedding_offset, 0, std::vector<std::vector<Node*>>(l + 1)};
 
     nodes_[id] = node;
     if (entry_point_ == nullptr) {
@@ -144,13 +144,12 @@ HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, s
 
     priority_queue<Candidate, vector<Candidate>, greater<>> candidates; // Min-priority queue C
     priority_queue<Candidate> max_queue;                                // Max-priority queue W
-    std::unordered_set<size_t> seen;
 
     const float ep_dist = config_.distance(query, embedding(ep), dim);
 
     max_queue.emplace(ep_dist, ep->id);
     candidates.emplace(ep_dist, ep->id);
-    seen.insert(ep->id);
+    std::uint64_t generation = ++ep->visit_generation; // used to mark visited nodes
 
     float df = ep_dist; // distance of the furthest element in W
 
@@ -163,9 +162,11 @@ HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, s
         candidates.pop();
 
         for (Node* nb : nodes_.at(closest)->neighbors[level]) {
-            if (!seen.insert(nb->id).second) {
+            // skip already visited nodes in this search generation
+            if (nb->visit_generation == generation) {
                 continue;
             }
+            nb->visit_generation = generation;
 
             const float nd = config_.distance(query, embedding(nb), dim);
 

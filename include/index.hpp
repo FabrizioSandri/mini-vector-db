@@ -51,6 +51,7 @@ private:
         std::size_t id;
         std::size_t level;
         std::size_t embedding_offset;
+        std::uint64_t visit_generation = 0;
 
         // Neighbors per layer: [level][neighbor ids]
         std::vector<std::vector<Node*>> neighbors;
