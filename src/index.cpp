@@ -54,11 +54,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     const size_t l = random_level();
     const size_t embedding_offset = embeddings_.size();
     this->embeddings_.insert(embeddings_.end(), vec, vec + dim);
-    Node* node = new Node{id,
-                          l,
-                          embedding_offset,
-                          std::vector<std::vector<Node*>>(l + 1),
-                          std::vector<std::unordered_set<Node*>>(l + 1)};
+    Node* node = new Node{id, l, embedding_offset, std::vector<std::vector<Node*>>(l + 1)};
 
     nodes_[id] = node;
     if (entry_point_ == nullptr) {
@@ -95,11 +91,9 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
 
             // edge: new node -> neighbor
             node->neighbors[lc].push_back(neighbor);
-            neighbor->incoming_neighbors[lc].insert(node);
 
             // edge: neighbor -> new node
             neighbor->neighbors[lc].push_back(node);
-            node->incoming_neighbors[lc].insert(neighbor);
         }
 
         // Shrink connections of each neighbor if it now exceeds Mmax at this layer.
@@ -111,25 +105,23 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
         // single farthest element"
         const size_t cap = lc == 0 ? config_.Mmax0 : config_.Mmax;
         for (const auto& [dist, neighbor_id] : neighbors) {
-            auto& e_conn = nodes_[neighbor_id]->neighbors[lc];
+            Node* neighbor = nodes_[neighbor_id];
+            auto& e_conn = neighbor->neighbors[lc];
             if (e_conn.size() <= cap) {
                 continue;
             }
 
             // find the index of the farthest neighbor to prune
             auto to_prune = e_conn.begin();
-            float max_dist =
-                config_.distance(embedding(nodes_[neighbor_id]), embedding(*to_prune), dim);
+            float max_dist = config_.distance(embedding(neighbor), embedding(*to_prune), dim);
             for (auto it = e_conn.begin() + 1; it != e_conn.end(); it++) {
-                const float d =
-                    config_.distance(embedding(nodes_[neighbor_id]), embedding(*it), dim);
+                const float d = config_.distance(embedding(neighbor), embedding(*it), dim);
                 if (d > max_dist) {
                     max_dist = d;
                     to_prune = it;
                 }
             }
 
-            (*to_prune)->incoming_neighbors[lc].erase(nodes_[neighbor_id]);
             e_conn.erase(to_prune);
         }
 
@@ -258,16 +250,12 @@ void HNSWIndex::remove(size_t id) {
         entry_point_ = best;
     }
 
-    // remove the node from its neighbors' neighbor lists
-    for (size_t lvl = 0; lvl <= node->level; ++lvl) {
-        // Outgoing edges (node -> o): o no longer has an incoming edge from node.
-        for (Node* out : node->neighbors[lvl]) {
-            out->incoming_neighbors[lvl].erase(node);
+    // Remove the node from the graph
+    for (const auto& [other_id, other] : nodes_) {
+        if (other_id == id) {
+            continue;
         }
-
-        // Incoming edges (p -> node): remove the dangling forward edge from p.
-        for (Node* in : node->incoming_neighbors[lvl]) {
-            auto& list = in->neighbors[lvl];
+        for (auto& list : other->neighbors) {
             list.erase(std::remove(list.begin(), list.end(), node), list.end());
         }
     }

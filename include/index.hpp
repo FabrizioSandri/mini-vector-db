@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <random>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -55,9 +54,6 @@ private:
 
         // Neighbors per layer: [level][neighbor ids]
         std::vector<std::vector<Node*>> neighbors;
-
-        // for reverse edges. Used for pruning when removing nodes.
-        std::vector<std::unordered_set<Node*>> incoming_neighbors;
     };
 
     HNSWConfig config_;
