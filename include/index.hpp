@@ -51,23 +51,25 @@ private:
     struct Node {
         std::size_t id;
         std::size_t level;
-        const float* embedding; // dim floats
+        std::size_t embedding_offset;
 
         // Neighbors per layer: [level][neighbor ids]
-        std::vector<std::vector<std::size_t>> neighbors;
+        std::vector<std::vector<Node*>> neighbors;
 
         // for reverse edges. Used for pruning when removing nodes.
-        std::vector<std::unordered_set<std::size_t>> incoming_neighbors;
+        std::vector<std::unordered_set<Node*>> incoming_neighbors;
     };
 
     HNSWConfig config_;
     std::mt19937 rng_;
 
     std::unordered_map<std::size_t, Node*> nodes_;
+    std::vector<float> embeddings_;
     Node* entry_point_ = nullptr;
 
     // Internal helpers
     std::size_t random_level();
+    const float* embedding(const Node* node) const;
 
     std::vector<Candidate> search_layer(const float* query,
                                         Node* ep,

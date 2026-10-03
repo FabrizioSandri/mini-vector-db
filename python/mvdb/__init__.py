@@ -54,7 +54,6 @@ class MVDB:
             max_level=max_level,
             distance=distance.value,
         )
-        self._vectors = {}
 
     def add(self, id: int, vector: np.ndarray):
         """Insert or update a vector in the index.
@@ -64,7 +63,6 @@ class MVDB:
             vector: A one-dimensional NumPy array containing the vector values.
         """
         contiguous_vector = np.ascontiguousarray(vector, dtype=np.float32)
-        self._vectors[id] = contiguous_vector
         self.index.add(id, contiguous_vector)
 
     def remove(self, id: int):
@@ -74,7 +72,6 @@ class MVDB:
             id: Identifier of the vector to remove.
         """
         self.index.remove(id)
-        del self._vectors[id]
 
     def size(self) -> int:
         """Return the current number of vectors stored in the index."""
