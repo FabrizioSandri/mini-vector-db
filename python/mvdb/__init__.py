@@ -56,11 +56,12 @@ class MVDB:
         )
 
     def add(self, id: int, vector: np.ndarray):
-        """Insert or update a vector in the index.
+        """Insert a vector in the index. If a vector with the same `id` already
+        exists, it will throw an Exception.
 
         Args:
-            id: Unique identifier associated with the vector.
-            vector: A one-dimensional NumPy array containing the vector values.
+            id: Unique identifier associated with the vector. vector: A
+            one-dimensional NumPy array containing the vector values.
         """
         contiguous_vector = np.ascontiguousarray(vector, dtype=np.float32)
         self.index.add(id, contiguous_vector)

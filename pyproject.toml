@@ -5,9 +5,9 @@ description = "MVDB (Mini Vector DB): a mini implementation of a Vector DB based
 authors = [
     { name = "FabrizioSandri", email = "dev.fabriziosandri@gmail.com" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 dependencies = [
-  "numpy>=2.5.3"
+  "numpy>=2.0.0"
 ]
 
 [build-system]

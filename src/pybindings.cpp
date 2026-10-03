@@ -25,7 +25,7 @@ public:
                              .distance = (distance == L2) ? l2_distance : cosine_distance}) {
     }
 
-    void add(std::size_t id, py::array_t<float> array) {
+    void add(std::size_t id, py::array_t<float, py::array::c_style | py::array::forcecast> array) {
         if (array.ndim() != 1) {
             throw py::value_error("array must be a 1-dimensional NumPy array");
         }
@@ -44,7 +44,9 @@ public:
         return HNSWIndex::size();
     }
 
-    std::vector<Candidate> search(py::array_t<float> query, std::size_t k) const {
+    std::vector<Candidate>
+    search(py::array_t<float, py::array::c_style | py::array::forcecast> query,
+           std::size_t k) const {
         if (query.ndim() != 1) {
             throw py::value_error("query must be a 1-dimensional NumPy array");
         }

@@ -23,7 +23,8 @@ HNSWIndex::HNSWIndex(HNSWConfig config) :
     if (config_.M <= 0)
         throw invalid_argument("M must be greater than 0.");
 
-    if (config.Mmax0 < config.M || config.Mmax < config.M || config.Mmax0 < 1 || config.Mmax < 1)
+    if (config_.Mmax0 < config_.M || config_.Mmax < config_.M || config_.Mmax0 < 1 ||
+        config_.Mmax < 1)
         throw invalid_argument(
             "Mmax0 and Mmax must be greater than or equal to M and greater than 0.");
 
@@ -149,7 +150,8 @@ HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, s
 
     max_queue.emplace(ep_dist, ep->id);
     candidates.emplace(ep_dist, ep->id);
-    std::uint64_t generation = ++ep->visit_generation; // used to mark visited nodes
+    std::uint64_t generation = ++visit_counter_; // used to mark visited nodes
+    ep->visit_generation = generation;           // mark the entry point as visited
 
     float df = ep_dist; // distance of the furthest element in W
 
