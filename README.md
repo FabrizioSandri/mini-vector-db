@@ -1,6 +1,6 @@
 # MVDB — Mini Vector DB
 
-MVDB is a small implementation of an in-memory vector database based on **HNSW** (Hierarchical Navigable Small World graphs, [Malkov & Yashunin](https://arxiv.org/abs/1603.09320)). The core is written in modern C++20 and exposed to Python through [pybind11](https://github.com/pybind/pybind11).
+MVDB is an in-memory vector database based on **HNSW** (Hierarchical Navigable Small World graphs, [Malkov & Yashunin](https://arxiv.org/abs/1603.09320)). The core is written in modern C++20 and exposed to Python through [pybind11](https://github.com/pybind/pybind11).
 
 ## Quick start (Python)
 
@@ -33,35 +33,6 @@ for dist, id_ in results:
 index.remove(42)
 ```
 
-## Python API
-
-### `HNSWIndex(dim, M=16, ef_construction=100, ef_search=50, max_level=16, distance=Distance.L2)`
-
-| Parameter         | Description                                                          |
-| ----------------- | -------------------------------------------------------------------- |
-| `dim`             | Dimensionality of the vectors. Must match on every `add` / `search`. |
-| `M`               | Number of connections created for a newly inserted node.             |
-| `ef_construction` | Size of the dynamic candidate list used while building the graph.    |
-| `ef_search`       | Size of the dynamic candidate list used at query time.               |
-| `max_level`       | Safety cap on the number of layers.                                  |
-| `distance`        | `Distance.L2` or `Distance.COSINE`.                                  |
-
-Derived internally: `Mmax = M` (upper layers), `Mmax0 = 2 * M` (layer 0), level multiplier `mL = 1 / ln(M)`.
-
-### Methods
-
-| Method             | Description                                                                                                      |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `add(id, vector)`  | Insert a 1-D NumPy array under a unique `id`. Raises if the ID already exists or the dimension does not match.   |
-| `remove(id)`       | Remove a vector by ID and unlink it from the graph. Raises if the ID does not exist.                             |
-| `size()`           | Number of vectors currently in the index.                                                                        |
-| `search(query, k)` | Returns up to `k` `(distance, id)` tuples, nearest first. Uses `max(ef_search, k)` as the base-layer beam width. |
-
-### Distances
-
-- `L2` returns the **squared** Euclidean distance (no square root), which preserves ranking and is cheaper to compute.
-- `COSINE` returns `1 - cos(a, b)`; zero-norm vectors are assigned the maximum distance `1.0`.
-
 ## Building
 
 ### Requirements
@@ -78,7 +49,7 @@ uv sync
 uv run bash build-py.sh     # configures and builds the python bindings
 ```
 
-`build-py.sh` configures CMake with `-DMVDB_BUILD_PYTHON=ON -DMVDB_BUILD_MAIN=OFF` against the `.venv` interpreter and writes the compiled `_core` module into `python/mvdb/`, next to the Python package sources. The vcpkg dependency is not needed for this build.
+`build-py.sh` configures CMake and builds the compiled `_core` module into `python/mvdb/`, next to the Python package sources. Vcpkg dependencies are not needed for this build.
 
 ### C++ library and executables
 
