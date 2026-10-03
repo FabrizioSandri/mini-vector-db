@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
 option(MVDB_BUILD_PYTHON "Build the Python bindings" OFF)
 option(MVDB_BUILD_MAIN "Build the main executable" ON)
 
@@ -32,7 +36,10 @@ if(MVDB_BUILD_MAIN)
   find_package(fmt CONFIG REQUIRED)
   add_executable(main tests/main.cpp)
   target_link_libraries(main PRIVATE mvdb fmt::fmt)
+  add_executable(latency tests/latency.cpp)
+  target_link_libraries(latency PRIVATE mvdb fmt::fmt)
 endif()
+
 
 
 # Python bindings
