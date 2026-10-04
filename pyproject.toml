@@ -7,7 +7,8 @@ authors = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  "numpy>=2.0.0"
+  "numpy>=2.0.0",
+  "pybind11>=3.1.0",
 ]
 
 [build-system]
@@ -22,6 +23,5 @@ module-name = "mvdb"
 dev = [
   "ipykernel>=7.3.0",
   "pytest>=8.0",
-  "pybind11>=3.1.0",
   "tqdm>=4.70.1",
 ]
