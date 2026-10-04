@@ -70,3 +70,12 @@ Testing/
 __pycache__
 .cmake
 data
+
+# Python
+__pycache__/
+.Python
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+*.whl

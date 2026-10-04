@@ -1,27 +1,48 @@
 [project]
 name = "mvdb"
-version = "0.1.0"
+version = "0.1.2"
+authors = [{ name = "FabrizioSandri", email = "dev.fabriziosandri@gmail.com" }]
 description = "MVDB (Mini Vector DB): a mini implementation of a Vector DB based on HNSW"
-authors = [
-    { name = "FabrizioSandri", email = "dev.fabriziosandri@gmail.com" }
-]
+keywords = ["vector database", "hnsw", "nearest neighbors", "ann", "embeddings"]
+readme = "README.md"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+
 requires-python = ">=3.10"
-dependencies = [
-  "numpy>=2.0.0",
-  "pybind11>=3.1.0",
-]
+dependencies = ["numpy>=2.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/FabrizioSandri/mini-vector-db"
+Issues = "https://github.com/FabrizioSandri/mini-vector-db/issues"
 
 [build-system]
-requires = ["uv_build>=0.12.17,<0.13"]
-build-backend = "uv_build"
+requires = ["setuptools>=77", "pybind11>=3.1.0"]
+build-backend = "setuptools.build_meta"
 
-[tool.uv.build-backend]
-module-root = "python"
-module-name = "mvdb"
+[tool.setuptools]
+package-dir = { "" = "python" }
+packages = ["mvdb"]
+
+[tool.setuptools.package-data]
+mvdb = ["py.typed", "*.pyi"]
 
 [dependency-groups]
-dev = [
-  "ipykernel>=7.3.0",
-  "pytest>=8.0",
-  "tqdm>=4.70.1",
+dev = ["ipykernel>=7.3.0", "pytest>=8.0", "tqdm>=4.70.1"]
+
+[tool.uv]
+# Rebuild the extension when the C++ sources change.
+cache-keys = [
+  { file = "pyproject.toml" },
+  { file = "setup.py" },
+  { file = "src/**/*.cpp" },
+  { file = "include/**/*.hpp" },
 ]
+
+[tool.cibuildwheel]
+build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
+skip = "*-win32 *_i686"
+build-verbosity = 1
+test-command = "python {project}/tests/smoke.py"
+
+[tool.cibuildwheel.macos]
+environment = { MACOSX_DEPLOYMENT_TARGET = "10.15" }

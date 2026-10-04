@@ -1,88 +1,70 @@
 # MVDB — Mini Vector DB
 
-MVDB is an in-memory vector database based on **HNSW** (Hierarchical Navigable Small World graphs, [Malkov & Yashunin](https://arxiv.org/abs/1603.09320)). The core is written in modern C++20 and exposed to Python through [pybind11](https://github.com/pybind/pybind11).
+An in-memory vector index based on [HNSW](https://arxiv.org/abs/1603.09320). C++20 core with Python bindings via pybind11.
 
-## Quick start (Python)
+## Install
+
+```bash
+uv add mvdb
+```
+
+Requires Python ≥ 3.10 and NumPy.
+
+## Usage
 
 ```python
 import numpy as np
 from mvdb import MVDB, Distance
 
-dim = 128
 rng = np.random.default_rng(0)
-data = rng.standard_normal((10_000, dim)).astype(np.float32)
+data = rng.standard_normal((10_000, 128)).astype(np.float32)
 
-index = MVDB(
-    dim=dim,                # dimension of the vectors
-    distance=Distance.L2,   # Choose among Distance.L2, Distance.COSINE
-    M=16,
-    ef_construction=100,
-    ef_search=50,
-    max_level=10,
-)
+index = MVDB(dim=128, distance=Distance.L2)  # or Distance.COSINE
 for i, vec in enumerate(data):
     index.add(i, vec)
 
-print(index.size())  # 10000
-
-query = rng.standard_normal(dim).astype(np.float32)
-results = index.search(query, k=5)  # list of (distance, id)
-for dist, id_ in results:
+query = rng.standard_normal(128).astype(np.float32)
+for dist, id_ in index.search(query, k=5):  # (distance, id), nearest first
     print(id_, dist)
 
 index.remove(42)
+print(index.size())  # 9999
 ```
 
-## Building
+Constructor parameters:
 
-### Requirements
+| Parameter         | Default | Description                         |
+| ----------------- | ------- | ----------------------------------- |
+| `dim`             | —       | Vector dimensionality               |
+| `distance`        | `L2`    | `Distance.L2` (squared) or `COSINE` |
+| `M`               | 16      | Max neighbors per node              |
+| `ef_construction` | 100     | Candidate list size while building  |
+| `ef_search`       | 50      | Candidate list size while searching |
+| `max_level`       | 16      | Cap on the number of graph layers   |
 
-- CMake ≥ 3.30
-- A C++20 compiler (GCC, Clang or MSVC)
-- Python ≥ 3.13 and [uv](https://docs.astral.sh/uv/) for the Python package
-- [vcpkg](https://github.com/microsoft/vcpkg) for the C++ executables (provides `fmt`)
-
-### Python bindings
+## Development
 
 ```bash
-uv sync
-uv run bash build-py.sh     # configures and builds the python bindings
+uv sync    # builds the extension in place
 ```
 
-`build-py.sh` configures CMake and builds the compiled `_core` module into `python/mvdb/`, next to the Python package sources. Vcpkg dependencies are not needed for this build.
-
-### C++ library and executables
+## C++ library
 
 ```bash
-cmake -S . -B build/cpp
-cmake --build build/cpp
+cmake -S . -B build
+cmake --build build
 ```
 
-This builds the static `mvdb` library.
-
-### CMake options
-
-| Option              | Default   | Description                   |
-| ------------------- | --------- | ----------------------------- |
-| `MVDB_BUILD_PYTHON` | `OFF`     | Build the Python bindings.    |
-| `MVDB_BUILD_MAIN`   | `ON`      | Build the `main` executable.  |
-| `CMAKE_BUILD_TYPE`  | `Release` | Defaults to Release if unset. |
-
-> **Note:** non-MSVC builds use `-march=native -ffast-math`. Binaries are tuned to the build machine's CPU and are not portable to other hardware; `-ffast-math` also relaxes strict IEEE floating point semantics.
-
-## Using the C++ library
+The demo executables need [fmt](https://github.com/fmtlib/fmt) via vcpkg.
 
 ```cpp
 #include "index.hpp"
 
 HNSWConfig cfg;
 cfg.dim = 128;
-cfg.M = 16;
 cfg.distance = cosine_distance;
-cfg.keep_pruned_connections = true;   // optional heuristic extensions
-cfg.extend_candidates = false;
 
 HNSWIndex index(cfg);
-index.add(/*id=*/0, vec_ptr, /*dim=*/128);
-auto hits = index.search(query_ptr, /*k=*/10, /*dim=*/128);  // vector<pair<float, size_t>>
+index.add(0, vec_ptr, 128);
+auto hits = index.search(query_ptr, 10, 128);  // vector<pair<float, size_t>>
 ```

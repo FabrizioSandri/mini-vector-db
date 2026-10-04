@@ -9,15 +9,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-option(MVDB_BUILD_PYTHON "Build the Python bindings" OFF)
-option(MVDB_BUILD_MAIN "Build the main executable" ON)
-
-
+# Compiler options
 if(MSVC)
   add_compile_options(/W4 /WX-)
 else()
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Wunused -march=native -ffast-math)
+  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Wunused -O3 -fno-math-errno -fno-trapping-math -fno-signed-zeros -fassociative-math)
 endif()
+
 
 # Core library 
 add_library(mvdb STATIC
@@ -31,23 +29,11 @@ target_include_directories(mvdb PUBLIC
 )
 
 
-# Executable
-if(MVDB_BUILD_MAIN)
-  find_package(fmt CONFIG REQUIRED)
-  add_executable(main tests/main.cpp)
-  target_link_libraries(main PRIVATE mvdb fmt::fmt)
-  add_executable(latency tests/latency.cpp)
-  target_link_libraries(latency PRIVATE mvdb fmt::fmt)
-endif()
+# Executables
+find_package(fmt CONFIG REQUIRED)
 
+add_executable(main tests/main.cpp)
+target_link_libraries(main PRIVATE mvdb fmt::fmt)
 
-
-# Python bindings
-if(MVDB_BUILD_PYTHON)
-  set(PYBIND11_FINDPYTHON ON)
-  find_package(pybind11 CONFIG REQUIRED)
-  pybind11_add_module(_core src/pybindings.cpp)
-  target_link_libraries(_core PRIVATE mvdb)
-  set_target_properties(_core PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python/mvdb")
-endif()
+add_executable(latency tests/latency.cpp)
+target_link_libraries(latency PRIVATE mvdb fmt::fmt)
