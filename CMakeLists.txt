@@ -32,8 +32,8 @@ target_include_directories(mvdb PUBLIC
 # Executables
 find_package(fmt CONFIG REQUIRED)
 
-add_executable(main tests/main.cpp)
+add_executable(main tests/cpp/main.cpp)
 target_link_libraries(main PRIVATE mvdb fmt::fmt)
 
-add_executable(latency tests/latency.cpp)
+add_executable(latency tests/cpp/latency.cpp)
 target_link_libraries(latency PRIVATE mvdb fmt::fmt)
