@@ -10,7 +10,7 @@
 
 #include "distance.hpp"
 
-using Candidate = std::pair<float, std::size_t>; // (distance, id)
+using Candidate = std::pair<std::size_t, float>; // (id, distance)
 
 struct HNSWConfig {
     std::size_t dim;                   // Dimensionality of the vectors

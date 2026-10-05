@@ -14,7 +14,7 @@ def main() -> None:
             index.add(i, vec)
         assert index.size() == 200
 
-        dist, id_ = index.search(data[7], k=1)[0]
+        id_, dist = index.search(data[7], k=1)[0]
         assert id_ == 7 and abs(dist) < 1e-4, (metric, id_, dist)
 
         index.remove(7)

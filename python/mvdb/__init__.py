@@ -78,7 +78,7 @@ class MVDB:
         """Return the current number of vectors stored in the index."""
         return self.index.size()
 
-    def search(self, query: list[float], k: int) -> list[tuple[float, int]]:
+    def search(self, query: list[float], k: int) -> list[tuple[int, float]]:
         """Search for the `k` nearest vectors to a query.
 
         Args:
@@ -86,7 +86,7 @@ class MVDB:
             k: Maximum number of results to return.
 
         Returns:
-            A list of `(distance, id)` tuples sorted from nearest to farthest.
+            A list of `(id, distance)` tuples sorted from nearest to farthest.
         """
         return self.index.search(np.ascontiguousarray(query, dtype=np.float32), k)
 

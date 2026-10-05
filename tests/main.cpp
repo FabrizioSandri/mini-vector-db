@@ -58,7 +58,7 @@ int main() {
 
     fmt::print("Top-{} neighbors:\n", k);
     for (const auto& r : results) {
-        fmt::print("  id={} distance={:.4f}\n", r.second, r.first);
+        fmt::print("  id={} distance={:.4f}\n", r.first, r.second);
     }
 
     // Clean up

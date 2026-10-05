@@ -1,4 +1,4 @@
-# MVDB — Mini Vector DB
+# MVDB — A mini vector DB
 
 An in-memory vector index based on [HNSW](https://arxiv.org/abs/1603.09320). C++20 core with Python bindings via pybind11.
 
@@ -16,17 +16,21 @@ Requires Python ≥ 3.10 and NumPy.
 import numpy as np
 from mvdb import MVDB, Distance
 
+# Create index
+index = MVDB(dim=128, distance=Distance.L2)
+
+# Add vectors
 rng = np.random.default_rng(0)
-data = rng.standard_normal((10_000, 128)).astype(np.float32)
+data = rng.uniform(-1, 1, (10_000, 128)).astype(np.float32)
+for id, vec in enumerate(data):
+    index.add(id, vec)
 
-index = MVDB(dim=128, distance=Distance.L2)  # or Distance.COSINE
-for i, vec in enumerate(data):
-    index.add(i, vec)
-
-query = rng.standard_normal(128).astype(np.float32)
-for dist, id_ in index.search(query, k=5):  # (distance, id), nearest first
+# Search
+query = rng.uniform(-1, 1, 128).astype(np.float32)
+for id_, dist in index.search(query, k=5):  # (id, distance), nearest first
     print(id_, dist)
 
+# Remove and check size
 index.remove(42)
 print(index.size())  # 9999
 ```
@@ -66,5 +70,5 @@ cfg.distance = cosine_distance;
 
 HNSWIndex index(cfg);
 index.add(0, vec_ptr, 128);
-auto hits = index.search(query_ptr, 10, 128);  // vector<pair<float, size_t>>
+auto hits = index.search(query_ptr, 10, 128);  // vector<pair<size_t, float>>
 ```
