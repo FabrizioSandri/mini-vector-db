@@ -28,8 +28,11 @@ HNSWIndex::HNSWIndex(HNSWConfig config) :
         throw invalid_argument(
             "Mmax0 and Mmax must be greater than or equal to M and greater than 0.");
 
-    if (config_.ef_search == 0)
+    if (config_.ef_search <= 0)
         throw invalid_argument("ef_search must be greater than 0.");
+
+    if (config_.ef_construction <= 0)
+        throw invalid_argument("ef_construction must be greater than 0.");
 }
 
 size_t HNSWIndex::random_level() {
@@ -268,6 +271,10 @@ void HNSWIndex::remove(size_t id) {
     // remove the node from the index and deallocate its memory
     nodes_.erase(node_it);
     delete node;
+
+    if (nodes_.empty()) {
+        entry_point_ = nullptr;
+    }
 }
 
 vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidates, size_t M) const {

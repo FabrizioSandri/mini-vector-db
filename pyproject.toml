@@ -27,7 +27,7 @@ packages = ["mvdb"]
 mvdb = ["py.typed", "*.pyi"]
 
 [dependency-groups]
-dev = ["ipykernel>=7.3.0", "pytest>=8.0", "tqdm>=4.70.1"]
+dev = ["pytest>=8.0"]
 
 [tool.uv]
 # Rebuild the extension when the C++ sources change.

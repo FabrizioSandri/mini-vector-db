@@ -1,5 +1,5 @@
-#ifndef __UTILS_HPP__
-#define __UTILS_HPP__
+#ifndef __MVDB_UTILS_HPP__
+#define __MVDB_UTILS_HPP__
 
 #include "index.hpp"
 

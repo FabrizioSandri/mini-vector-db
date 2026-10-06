@@ -1,5 +1,5 @@
-#ifndef __DISTANCE_HPP__
-#define __DISTANCE_HPP__
+#ifndef __MVDB_DISTANCE_HPP__
+#define __MVDB_DISTANCE_HPP__
 
 #include <cstddef>
 #include <cstdint>

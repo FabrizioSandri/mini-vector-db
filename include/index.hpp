@@ -1,5 +1,5 @@
-#ifndef __INDEX_HPP__
-#define __INDEX_HPP__
+#ifndef __MVDB_INDEX_HPP__
+#define __MVDB_INDEX_HPP__
 
 #include <cmath>
 #include <cstddef>
