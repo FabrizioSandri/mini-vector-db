@@ -18,3 +18,6 @@ def test_add_remove_and_search_10000_vectors():
     index.remove(42)
     assert index.size() == 9999
     assert all(id_ != 42 for id_, _ in index.search(embeddings[42], k=10))
+
+    index.add(42, embeddings[42])
+    assert index.search(embeddings[42], k=1)[0][0] == 42

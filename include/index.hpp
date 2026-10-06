@@ -19,13 +19,13 @@ struct HNSWConfig {
     std::size_t ef_search = 50;        // Size of dynamic candidate list during search
     std::size_t max_level = 16;        // Safety cap on number of layers
     DistanceFunc distance = l2_distance;
-    std::size_t Mmax0 = 2 * M;
-    std::size_t Mmax = M;
+    std::size_t Mmax0;
+    std::size_t Mmax;
     bool keep_pruned_connections =
         false; // If true, pad R with nearest discarded candidates when heuristic yields < M
     bool extend_candidates =
         false; // If true, also consider neighbors-of-candidates in the heuristic search
-    double mL_ = 1.0 / log(std::max((int)M, 2)); // 1/ln(M)
+    double mL_; // 1/ln(M)
 };
 
 class HNSWIndex {

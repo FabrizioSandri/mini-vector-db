@@ -22,10 +22,9 @@ HNSWIndex::HNSWIndex(HNSWConfig config) :
     if (config_.M <= 0)
         throw invalid_argument("M must be greater than 0.");
 
-    if (config_.Mmax0 < config_.M || config_.Mmax < config_.M || config_.Mmax0 < 1 ||
-        config_.Mmax < 1)
-        throw invalid_argument(
-            "Mmax0 and Mmax must be greater than or equal to M and greater than 0.");
+    config_.Mmax0 = 2 * config_.M;
+    config_.Mmax = config_.M;
+    config_.mL_ = 1.0 / log(std::max((int)config_.M, 2));
 
     if (config_.ef_search <= 0)
         throw invalid_argument("ef_search must be greater than 0.");
@@ -266,6 +265,19 @@ void HNSWIndex::remove(size_t id) {
             list.erase(std::remove(list.begin(), list.end(), node), list.end());
         }
     }
+
+    // Compact the embedding storage and fix offsets for nodes that followed the removed node.
+    const size_t removed_offset = node->embedding_offset;
+    const auto first =
+        embeddings_.begin() + static_cast<std::vector<float>::difference_type>(removed_offset);
+    const auto last = first + static_cast<std::vector<float>::difference_type>(config_.dim);
+    embeddings_.erase(first, last);
+    for (const auto& [other_id, other] : nodes_) {
+        if (other_id != id && other->embedding_offset > removed_offset) {
+            other->embedding_offset -= config_.dim;
+        }
+    }
+    embeddings_.shrink_to_fit();
 
     // remove the node from the index and deallocate its memory
     nodes_.erase(node_it);
