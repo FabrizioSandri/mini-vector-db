@@ -2,7 +2,7 @@ import numpy as np
 from mvdb import MVDB, Distance
 
 
-def test_add_remove_and_search_10000_vectors() -> None:
+def test_add_remove_and_search_10000_vectors():
     rng = np.random.default_rng(42)
     embeddings = rng.uniform(-1, 1, (10000, 128)).astype(np.float32)
     index = MVDB(dim=128, distance=Distance.L2)

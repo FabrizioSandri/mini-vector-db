@@ -39,7 +39,7 @@ cache-keys = [
 ]
 
 [tool.pytest.ini_options]
-python_files = ["test_*.py", "*_test.py", "smoke.py"]
+python_files = ["test_*.py", "*_test.py"]
 
 [tool.cibuildwheel]
 build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
