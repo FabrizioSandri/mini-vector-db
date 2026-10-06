@@ -39,7 +39,7 @@ wheels = [
 
 [[package]]
 name = "mvdb"
-version = "0.1.2"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -53,7 +53,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0" }]
+requires-dist = [{ name = "numpy", specifier = ">=1.21.0" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.0" }]

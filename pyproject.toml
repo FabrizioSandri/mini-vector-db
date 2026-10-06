@@ -1,6 +1,6 @@
 [project]
 name = "mvdb"
-version = "0.1.2"
+version = "0.1.0"
 authors = [{ name = "FabrizioSandri", email = "dev.fabriziosandri@gmail.com" }]
 description = "MVDB (Mini Vector DB): a mini implementation of a Vector DB based on HNSW"
 keywords = ["vector database", "hnsw", "nearest neighbors", "ann", "embeddings"]
@@ -9,7 +9,7 @@ license = "GPL-3.0-only"
 license-files = ["LICENSE"]
 
 requires-python = ">=3.10"
-dependencies = ["numpy>=2.0.0"]
+dependencies = ["numpy>=1.21.0"]
 
 [project.urls]
 Homepage = "https://github.com/FabrizioSandri/mini-vector-db"
@@ -37,6 +37,9 @@ cache-keys = [
   { file = "src/**/*.cpp" },
   { file = "include/**/*.hpp" },
 ]
+
+[tool.pytest.ini_options]
+python_files = ["test_*.py", "*_test.py", "smoke.py"]
 
 [tool.cibuildwheel]
 build = "cp310-* cp311-* cp312-* cp313-* cp314-*"

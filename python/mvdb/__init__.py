@@ -8,6 +8,7 @@ float vectors and supports insertion, removal, and nearest-neighbor search.
 import enum
 
 import numpy as np
+import numpy.typing as npt
 
 from mvdb._core import Distance as Distance_
 from mvdb._core import HNSWIndex as HNSWIndex_
@@ -46,7 +47,7 @@ class MVDB:
             distance: Distance metric to use for similarity or dissimilarity
                 comparisons.
         """
-        self.index = HNSWIndex_(
+        self._index = HNSWIndex_(
             dim=dim,
             M=M,
             ef_construction=ef_construction,
@@ -55,16 +56,16 @@ class MVDB:
             distance=distance.value,
         )
 
-    def add(self, id: int, vector: np.ndarray):
+    def add(self, id: int, vector: npt.ArrayLike):
         """Insert a vector in the index. If a vector with the same `id` already
         exists, it will throw an Exception.
 
         Args:
-            id: Unique identifier associated with the vector. vector: A
-            one-dimensional NumPy array containing the vector values.
+            id: Unique identifier associated with the vector.
+            vector: A one-dimensional NumPy array containing the vector values.
         """
         contiguous_vector = np.ascontiguousarray(vector, dtype=np.float32)
-        self.index.add(id, contiguous_vector)
+        self._index.add(id, contiguous_vector)
 
     def remove(self, id: int):
         """Remove a vector from the index.
@@ -72,13 +73,13 @@ class MVDB:
         Args:
             id: Identifier of the vector to remove.
         """
-        self.index.remove(id)
+        self._index.remove(id)
 
     def size(self) -> int:
         """Return the current number of vectors stored in the index."""
-        return self.index.size()
+        return self._index.size()
 
-    def search(self, query: list[float], k: int) -> list[tuple[int, float]]:
+    def search(self, query: npt.ArrayLike, k: int) -> list[tuple[int, float]]:
         """Search for the `k` nearest vectors to a query.
 
         Args:
@@ -88,7 +89,15 @@ class MVDB:
         Returns:
             A list of `(id, distance)` tuples sorted from nearest to farthest.
         """
-        return self.index.search(np.ascontiguousarray(query, dtype=np.float32), k)
+        return self._index.search(np.ascontiguousarray(query, dtype=np.float32), k)
+
+    def __len__(self) -> int:
+        """Return the current number of vectors stored in the index."""
+        return self.size()
+
+    def __repr__(self) -> str:
+        """Return a string representation of the index."""
+        return f"MVDB(dim={self._index.dim}, size={self.size()})"
 
 
 __all__ = ["MVDB", "Distance"]

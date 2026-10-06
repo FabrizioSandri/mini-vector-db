@@ -7,7 +7,7 @@
 
 namespace py = pybind11;
 
-enum Distance { L2, COSINE };
+enum class Distance { L2, COSINE };
 
 class PyHNSWIndex : private HNSWIndex {
 public:
@@ -16,21 +16,22 @@ public:
                 std::size_t ef_construction = 100,
                 std::size_t ef_search = 50,
                 std::size_t max_level = 16,
-                Distance distance = L2) :
-        HNSWIndex(HNSWConfig{.dim = dim,
-                             .M = M,
-                             .ef_construction = ef_construction,
-                             .ef_search = ef_search,
-                             .max_level = max_level,
-                             .distance = (distance == L2) ? l2_distance : cosine_distance}) {
+                Distance distance = Distance::L2) :
+        HNSWIndex(
+            HNSWConfig{.dim = dim,
+                       .M = M,
+                       .ef_construction = ef_construction,
+                       .ef_search = ef_search,
+                       .max_level = max_level,
+                       .distance = (distance == Distance::L2) ? l2_distance : cosine_distance}) {
     }
 
     void add(std::size_t id, py::array_t<float, py::array::c_style | py::array::forcecast> array) {
         if (array.ndim() != 1) {
             throw py::value_error("array must be a 1-dimensional NumPy array");
         }
-        if (array.shape(0) < 0) {
-            throw py::value_error("array length cannot be negative");
+        if (array.shape(0) <= 0) {
+            throw py::value_error("array length cannot be non-positive");
         }
 
         return HNSWIndex::add(id, array.data(), static_cast<std::size_t>(array.shape(0)));
@@ -73,7 +74,7 @@ PYBIND11_MODULE(_core, m) {
              py::arg("ef_construction") = 100,
              py::arg("ef_search") = 50,
              py::arg("max_level") = 16,
-             py::arg("distance") = L2)
+             py::arg("distance") = Distance::L2)
         .def("add", &PyHNSWIndex::add, py::arg("id"), py::arg("vector"))
         .def("remove", &PyHNSWIndex::remove, py::arg("id"))
         .def("size", &PyHNSWIndex::size)

@@ -4,7 +4,7 @@ import numpy as np
 from mvdb import MVDB, Distance
 
 
-def main() -> None:
+def test_smoke() -> None:
     rng = np.random.default_rng(0)
     data = rng.standard_normal((200, 16)).astype(np.float32)
 
@@ -24,4 +24,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    test_smoke()

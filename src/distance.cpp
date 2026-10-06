@@ -23,11 +23,3 @@ float cosine_distance(const float* a, const float* b, std::size_t dim) {
     }
     return 1.0f - (dot / denom);
 }
-
-float dot_product(const float* a, const float* b, std::size_t dim) {
-    float sum = 0.0f;
-    for (std::size_t i = 0; i < dim; ++i) {
-        sum += a[i] * b[i];
-    }
-    return sum;
-}

@@ -13,7 +13,4 @@ float l2_distance(const float* a, const float* b, std::size_t dim);
 // Cosine distance: 1 - cosine_similarity
 float cosine_distance(const float* a, const float* b, std::size_t dim);
 
-// Dot product (for inner-product search variants)
-float dot_product(const float* a, const float* b, std::size_t dim);
-
 #endif
