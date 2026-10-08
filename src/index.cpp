@@ -13,7 +13,7 @@
 using namespace std;
 
 HNSWIndex::HNSWIndex(HNSWConfig config) :
-    config_(move(config)),
+    config_(std::move(config)),
     rng_(42) {
 
     if (config_.dim <= 0)

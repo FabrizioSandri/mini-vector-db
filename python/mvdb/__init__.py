@@ -55,6 +55,7 @@ class MVDB:
             max_level=max_level,
             distance=distance.value,
         )
+        self.dim = dim
 
     def add(self, id: int, vector: npt.ArrayLike):
         """Insert a vector in the index. If a vector with the same `id` already
@@ -97,7 +98,7 @@ class MVDB:
 
     def __repr__(self) -> str:
         """Return a string representation of the index."""
-        return f"MVDB(dim={self._index.dim}, size={self.size()})"
+        return f"MVDB(dim={self.dim}, size={self.size()})"
 
 
 __all__ = ["MVDB", "Distance"]
