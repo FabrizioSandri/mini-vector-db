@@ -73,7 +73,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     for (size_t lc = L; lc > l; lc--) {
         auto candidates = search_layer(embedding(node), ep, 1, lc, dim);
         if (!candidates.empty()) {
-            ep = nodes_[candidates[0].first];
+            ep = nodes_[candidates[0].idx];
         }
     }
 
@@ -132,7 +132,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
         // ep <- W: continue from the nearest element found at this layer.
         if (!candidates.empty()) {
             ep = nodes_[min_element(candidates.begin(), candidates.end(), compare_lowest_first)
-                            ->first];
+                            ->idx];
         }
     }
 
@@ -143,12 +143,12 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     }
 }
 
-vector<Candidate>
+vector<Neighbor>
 HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, size_t dim) const {
 
-    priority_queue<Candidate, vector<Candidate>, CandidateMinHeapCompare>
+    priority_queue<Neighbor, vector<Neighbor>, NeighborMinHeapCompare>
         candidates; // Min-priority queue C
-    priority_queue<Candidate, vector<Candidate>, CandidateMaxHeapCompare>
+    priority_queue<Neighbor, vector<Neighbor>, NeighborMaxHeapCompare>
         max_queue; // Max-priority queue W
 
     const float ep_dist = config_.distance(query, embedding(ep), dim);
@@ -184,12 +184,12 @@ HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, s
                 if (max_queue.size() > ef) {
                     max_queue.pop();
                 }
-                df = max_queue.top().second;
+                df = max_queue.top().dist;
             }
         }
     }
 
-    vector<Candidate> result;
+    vector<Neighbor> result;
     result.reserve(max_queue.size());
     while (!max_queue.empty()) {
         result.push_back(max_queue.top());
@@ -218,7 +218,7 @@ std::vector<Candidate> HNSWIndex::search(const float* query, size_t k, std::size
     for (size_t lc = L; lc > 0; --lc) {
         auto layer_candidates = search_layer(query, ep, 1, lc, dim);
         if (!layer_candidates.empty()) {
-            ep = nodes_[layer_candidates[0].first];
+            ep = nodes_[layer_candidates[0].idx];
         }
     }
 
@@ -288,10 +288,10 @@ void HNSWIndex::remove(size_t id) {
     }
 }
 
-vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidates, size_t M) const {
+vector<Neighbor> HNSWIndex::select_neighbors_simple(vector<Neighbor> candidates, size_t M) const {
     if (candidates.size() > M) {
         nth_element(candidates.begin(),
-                    candidates.begin() + static_cast<std::vector<Candidate>::difference_type>(M),
+                    candidates.begin() + static_cast<std::vector<Neighbor>::difference_type>(M),
                     candidates.end(),
                     compare_lowest_first);
         candidates.resize(M);
@@ -302,20 +302,20 @@ vector<Candidate> HNSWIndex::select_neighbors_simple(vector<Candidate> candidate
     return candidates;
 }
 
-std::vector<Candidate> HNSWIndex::select_neighbors_heuristic(const float* query,
-                                                             const std::vector<Candidate>& C,
-                                                             std::size_t M,
-                                                             std::size_t lc,
-                                                             std::size_t dim,
-                                                             bool extend_candidates,
-                                                             bool keep_pruned_connections) const {
+std::vector<Neighbor> HNSWIndex::select_neighbors_heuristic(const float* query,
+                                                            const std::vector<Neighbor>& C,
+                                                            std::size_t M,
+                                                            std::size_t lc,
+                                                            std::size_t dim,
+                                                            bool extend_candidates,
+                                                            bool keep_pruned_connections) const {
 
     // W: working set of candidates, as a min-heap ordered by distance to q.
-    priority_queue<Candidate, vector<Candidate>, CandidateMinHeapCompare> W;
+    priority_queue<Neighbor, vector<Neighbor>, NeighborMinHeapCompare> W;
     unordered_set<size_t> in_w;
 
     for (const auto& c : C) {
-        if (in_w.insert(c.first).second) {
+        if (in_w.insert(c.idx).second) {
             W.push(c);
         }
     }
@@ -323,7 +323,7 @@ std::vector<Candidate> HNSWIndex::select_neighbors_heuristic(const float* query,
     // extendCandidates: pull in each candidate's neighbors at this layer too.
     if (extend_candidates) {
         for (const auto& c : C) {
-            Node* c_node = nodes_[c.first];
+            Node* c_node = nodes_[c.idx];
             for (Node* c_adj : c_node->neighbors[lc]) {
                 if (in_w.insert(c_adj->idx).second) {
                     const float d = config_.distance(query, embedding(c_adj), dim);
@@ -333,23 +333,23 @@ std::vector<Candidate> HNSWIndex::select_neighbors_heuristic(const float* query,
         }
     }
 
-    vector<Candidate> R;
+    vector<Neighbor> R;
     R.reserve(M);
-    vector<Candidate> Wd; // discarded candidates, kept sorted-on-demand below
+    vector<Neighbor> Wd; // discarded candidates, kept sorted-on-demand below
 
     while (!W.empty() && R.size() < M) {
-        const Candidate e = W.top();
+        const Neighbor e = W.top();
         W.pop();
 
-        const float* e_vec = embedding(nodes_[e.first]);
+        const float* e_vec = embedding(nodes_[e.idx]);
 
         // Diversity test: keep e only if it's closer to q than to every
         // element already selected into R (this is what "closer to q
         // compared to any element from R" actually encodes).
         bool keep = true;
         for (const auto& r : R) {
-            const float dist_e_r = config_.distance(e_vec, embedding(nodes_[r.first]), dim);
-            if (dist_e_r < e.second) {
+            const float dist_e_r = config_.distance(e_vec, embedding(nodes_[r.idx]), dim);
+            if (dist_e_r < e.dist) {
                 keep = false;
                 break;
             }

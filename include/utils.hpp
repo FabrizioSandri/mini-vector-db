@@ -3,24 +3,24 @@
 
 #include "index.hpp"
 
-using ComparePairFn = bool (*)(const Candidate&, const Candidate&);
+using CompareNeighborFn = bool (*)(const Neighbor&, const Neighbor&);
 
-const ComparePairFn compare_lowest_first = [](const Candidate& a, const Candidate& b) {
-    return a.second < b.second;
+const CompareNeighborFn compare_lowest_first = [](const Neighbor& a, const Neighbor& b) {
+    return a.dist < b.dist;
 };
-const ComparePairFn compare_highest_first = [](const Candidate& a, const Candidate& b) {
-    return a.second > b.second;
+const CompareNeighborFn compare_highest_first = [](const Neighbor& a, const Neighbor& b) {
+    return a.dist > b.dist;
 };
 
-struct CandidateMinHeapCompare {
-    bool operator()(const Candidate& a, const Candidate& b) const {
-        return a.second > b.second;
+struct NeighborMinHeapCompare {
+    bool operator()(const Neighbor& a, const Neighbor& b) const {
+        return a.dist > b.dist;
     }
 };
 
-struct CandidateMaxHeapCompare {
-    bool operator()(const Candidate& a, const Candidate& b) const {
-        return a.second < b.second;
+struct NeighborMaxHeapCompare {
+    bool operator()(const Neighbor& a, const Neighbor& b) const {
+        return a.dist < b.dist;
     }
 };
 

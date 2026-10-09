@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <random>
 #include <unordered_map>
 #include <utility>
@@ -11,6 +12,11 @@
 #include "distance.hpp"
 
 using Candidate = std::pair<std::size_t, float>; // (idx/id, distance)
+
+struct Neighbor {
+    std::size_t idx;
+    float dist;
+};
 
 struct HNSWConfig {
     std::size_t dim;                   // Dimensionality of the vectors
@@ -71,22 +77,22 @@ private:
     std::size_t random_level();
     const float* embedding(const Node* node) const;
 
-    std::vector<Candidate> search_layer(const float* query,
-                                        Node* ep,
-                                        std::size_t ef,
-                                        std::size_t level,
-                                        std::size_t dim) const;
+    std::vector<Neighbor> search_layer(const float* query,
+                                       Node* ep,
+                                       std::size_t ef,
+                                       std::size_t level,
+                                       std::size_t dim) const;
 
-    std::vector<Candidate> select_neighbors_simple(std::vector<Candidate> candidates,
-                                                   std::size_t M) const;
+    std::vector<Neighbor> select_neighbors_simple(std::vector<Neighbor> candidates,
+                                                  std::size_t M) const;
 
-    std::vector<Candidate> select_neighbors_heuristic(const float* query,
-                                                      const std::vector<Candidate>& C,
-                                                      std::size_t M,
-                                                      std::size_t lc,
-                                                      std::size_t dim,
-                                                      bool extend_candidates,
-                                                      bool keep_pruned_connections) const;
+    std::vector<Neighbor> select_neighbors_heuristic(const float* query,
+                                                     const std::vector<Neighbor>& C,
+                                                     std::size_t M,
+                                                     std::size_t lc,
+                                                     std::size_t dim,
+                                                     bool extend_candidates,
+                                                     bool keep_pruned_connections) const;
 };
 
 #endif
