@@ -48,4 +48,4 @@ build-verbosity = 1
 test-command = "python {project}/tests/python/test_smoke.py"
 
 [tool.cibuildwheel.macos]
-environment = { MACOSX_DEPLOYMENT_TARGET = "10.15" }
+environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
