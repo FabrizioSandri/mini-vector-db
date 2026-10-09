@@ -10,7 +10,7 @@
 
 #include "distance.hpp"
 
-using Candidate = std::pair<std::size_t, float>; // (id, distance)
+using Candidate = std::pair<std::size_t, float>; // (idx/id, distance)
 
 struct HNSWConfig {
     std::size_t dim;                   // Dimensionality of the vectors
@@ -24,7 +24,7 @@ struct HNSWConfig {
     bool keep_pruned_connections =
         false; // If true, pad R with nearest discarded candidates when heuristic yields < M
     bool extend_candidates =
-        false; // If true, also consider neighbors-of-candidates in the heuristic search
+        false;  // If true, also consider neighbors-of-candidates in the heuristic search
     double mL_; // 1/ln(M)
 };
 
@@ -49,8 +49,8 @@ public:
 private:
     struct Node {
         std::size_t id;
+        std::size_t idx;
         std::size_t level;
-        std::size_t embedding_offset;
         std::uint64_t visit_generation = 0;
 
         // Neighbors per layer: [level][neighbor ids]
@@ -60,7 +60,9 @@ private:
     HNSWConfig config_;
     std::mt19937 rng_;
 
-    std::unordered_map<std::size_t, Node*> nodes_;
+    std::unordered_map<std::size_t, std::size_t> nodes_map_;
+    std::vector<Node*> nodes_;
+
     std::vector<float> embeddings_;
     Node* entry_point_ = nullptr;
     mutable uint64_t visit_counter_ = 0; // used to mark visited nodes during search
