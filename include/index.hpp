@@ -68,13 +68,14 @@ private:
 
     std::unordered_map<std::size_t, std::size_t> nodes_map_;
     std::vector<Node*> nodes_;
-
     std::vector<float> embeddings_;
+
     Node* entry_point_ = nullptr;
     mutable uint64_t visit_counter_ = 0; // used to mark visited nodes during search
 
     // Internal helpers
     std::size_t random_level();
+
     const float* embedding(const Node* node) const;
 
     std::vector<Neighbor> search_layer(const float* query,

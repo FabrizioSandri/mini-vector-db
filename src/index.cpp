@@ -161,15 +161,13 @@ HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, s
     float df = ep_dist; // distance of the furthest element in W
 
     while (!candidates.empty()) {
-        const auto [closest_idx, dc] =
-            candidates.top(); // extract nearest element from candidates to q
-
-        if (dc > df) {
+        const Neighbor closest = candidates.top(); // extract nearest element from candidates to q
+        if (closest.dist > df) {
             break;
         }
         candidates.pop();
 
-        for (Node* nb : nodes_[closest_idx]->neighbors[level]) {
+        for (Node* nb : nodes_[closest.idx]->neighbors[level]) {
             // skip already visited nodes in this search generation
             if (nb->visit_generation == generation) {
                 continue;

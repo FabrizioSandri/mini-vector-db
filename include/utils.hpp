@@ -8,6 +8,7 @@ using CompareNeighborFn = bool (*)(const Neighbor&, const Neighbor&);
 const CompareNeighborFn compare_lowest_first = [](const Neighbor& a, const Neighbor& b) {
     return a.dist < b.dist;
 };
+
 const CompareNeighborFn compare_highest_first = [](const Neighbor& a, const Neighbor& b) {
     return a.dist > b.dist;
 };
