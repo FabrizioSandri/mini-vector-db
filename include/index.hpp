@@ -66,7 +66,7 @@ private:
     HNSWConfig config_;
     std::mt19937 rng_;
 
-    std::unordered_map<std::size_t, std::size_t> nodes_map_;
+    std::unordered_map<std::size_t, std::size_t> idToIdx_;
     std::vector<Node*> nodes_;
     std::vector<float> embeddings_;
 

@@ -50,7 +50,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
                                std::to_string(this->config_.dim) + ".");
     }
 
-    if (nodes_map_.find(id) != nodes_map_.end()) {
+    if (idToIdx_.find(id) != idToIdx_.end()) {
         throw runtime_error("Node with ID " + std::to_string(id) + " already exists.");
     }
 
@@ -60,16 +60,17 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
 
     nodes_.push_back(node);
     this->embeddings_.insert(embeddings_.end(), vec, vec + dim);
-    nodes_map_[id] = idx;
+    idToIdx_[id] = idx;
+
     if (entry_point_ == nullptr) {
         entry_point_ = node;
         return;
     }
 
+    // Phase 1: greedy descent with ef=1.
     Node* ep = entry_point_;
     const size_t L = entry_point_->level; // top layer of the graph, *before* this insertion
 
-    // Phase 1: greedy descent with ef=1.
     for (size_t lc = L; lc > l; lc--) {
         auto candidates = search_layer(embedding(node), ep, 1, lc, dim);
         if (!candidates.empty()) {
@@ -90,14 +91,12 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
                                                     config_.keep_pruned_connections);
 
         // Add bidirectional connections from neighbors to q at layer lc
-        for (const auto& [neighbor_idx, dist] : neighbors) {
-            Node* neighbor = nodes_[neighbor_idx];
-
+        for (const Neighbor& neighbor : neighbors) {
             // edge: new node -> neighbor
-            node->neighbors[lc].push_back(neighbor);
+            node->neighbors[lc].push_back(nodes_[neighbor.idx]);
 
             // edge: neighbor -> new node
-            neighbor->neighbors[lc].push_back(node);
+            nodes_[neighbor.idx]->neighbors[lc].push_back(node);
         }
 
         // Shrink connections of each neighbor if it now exceeds Mmax at this layer.
@@ -108,8 +107,8 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
         // at this point. That means "select the M nearest" reduces to "drop the
         // single farthest element"
         const size_t cap = lc == 0 ? config_.Mmax0 : config_.Mmax;
-        for (const auto& [neighbor_idx, dist] : neighbors) {
-            Node* neighbor = nodes_[neighbor_idx];
+        for (const Neighbor& nb : neighbors) {
+            Node* neighbor = nodes_[nb.idx];
             auto& e_conn = neighbor->neighbors[lc];
             if (e_conn.size() <= cap) {
                 continue;
@@ -131,8 +130,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
 
         // ep <- W: continue from the nearest element found at this layer.
         if (!candidates.empty()) {
-            ep = nodes_[min_element(candidates.begin(), candidates.end(), compare_lowest_first)
-                            ->idx];
+            ep = nodes_[candidates.front().idx];
         }
     }
 
@@ -237,8 +235,8 @@ std::vector<Candidate> HNSWIndex::search(const float* query, size_t k, std::size
 }
 
 void HNSWIndex::remove(size_t id) {
-    auto node_it = nodes_map_.find(id);
-    if (node_it == nodes_map_.end()) {
+    auto node_it = idToIdx_.find(id);
+    if (node_it == idToIdx_.end()) {
         throw runtime_error("Node with ID " + std::to_string(id) + " does not exist.");
     }
     const std::size_t idx = node_it->second;
@@ -273,12 +271,12 @@ void HNSWIndex::remove(size_t id) {
                     config_.dim,
                     embeddings_.data() + idx * config_.dim);
         nodes_[idx] = last;
-        nodes_map_[last->id] = idx;
+        idToIdx_[last->id] = idx;
         last->idx = idx;
     }
     nodes_.pop_back();
     embeddings_.resize(embeddings_.size() - config_.dim);
-    nodes_map_.erase(id);
+    idToIdx_.erase(id);
     delete node;
 
     if (nodes_.empty()) {
