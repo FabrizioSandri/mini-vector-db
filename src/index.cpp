@@ -57,10 +57,11 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     const size_t idx = nodes_.size();
     const size_t l = random_level();
     Node* node = new Node{id, idx, l, 0, std::vector<std::vector<Node*>>(l + 1)};
+    idToIdx_[id] = idx;
 
     nodes_.push_back(node);
     this->embeddings_.insert(embeddings_.end(), vec, vec + dim);
-    idToIdx_[id] = idx;
+    const float* node_embedding = embedding(node);
 
     if (entry_point_ == nullptr) {
         entry_point_ = node;
@@ -72,7 +73,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     const size_t L = entry_point_->level; // top layer of the graph, *before* this insertion
 
     for (size_t lc = L; lc > l; lc--) {
-        auto candidates = search_layer(embedding(node), ep, 1, lc, dim);
+        auto candidates = search_layer(node_embedding, ep, 1, lc, dim);
         if (!candidates.empty()) {
             ep = nodes_[candidates[0].idx];
         }
@@ -80,9 +81,9 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
 
     // Phase 2: real search + insertion
     for (size_t lc = min(L, l) + 1; lc-- > 0;) {
-        auto candidates = search_layer(embedding(node), ep, config_.ef_construction, lc, dim);
+        auto candidates = search_layer(node_embedding, ep, config_.ef_construction, lc, dim);
         // auto neighbors = select_neighbors_simple(candidates, config_.M);
-        auto neighbors = select_neighbors_heuristic(embedding(node),
+        auto neighbors = select_neighbors_heuristic(node_embedding,
                                                     candidates,
                                                     config_.M,
                                                     lc,
@@ -91,6 +92,7 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
                                                     config_.keep_pruned_connections);
 
         // Add bidirectional connections from neighbors to q at layer lc
+        node->neighbors[lc].reserve(neighbors.size());
         for (const Neighbor& neighbor : neighbors) {
             // edge: new node -> neighbor
             node->neighbors[lc].push_back(nodes_[neighbor.idx]);
@@ -203,7 +205,7 @@ std::vector<Candidate> HNSWIndex::search(const float* query, size_t k, std::size
                                std::to_string(this->config_.dim) + ".");
     }
 
-    if (nodes_.empty()) {
+    if (k == 0 || nodes_.empty()) {
         return {};
     }
 
@@ -308,17 +310,21 @@ std::vector<Neighbor> HNSWIndex::select_neighbors_heuristic(const float* query,
 
     // W: working set of candidates, as a min-heap ordered by distance to q.
     priority_queue<Neighbor, vector<Neighbor>, NeighborMinHeapCompare> W;
-    unordered_set<size_t> in_w;
 
-    for (const auto& c : C) {
-        if (in_w.insert(c.idx).second) {
+    if (!extend_candidates) {
+        for (const Neighbor& c : C) {
             W.push(c);
         }
-    }
+    } else {
+        unordered_set<size_t> in_w;
+        in_w.reserve(C.size());
+        for (const Neighbor& c : C) {
+            in_w.insert(c.idx);
+            W.push(c);
+        }
 
-    // extendCandidates: pull in each candidate's neighbors at this layer too.
-    if (extend_candidates) {
-        for (const auto& c : C) {
+        // extendCandidates: pull in each candidate's neighbors at this layer too.
+        for (const Neighbor& c : C) {
             Node* c_node = nodes_[c.idx];
             for (Node* c_adj : c_node->neighbors[lc]) {
                 if (in_w.insert(c_adj->idx).second) {
@@ -343,7 +349,7 @@ std::vector<Neighbor> HNSWIndex::select_neighbors_heuristic(const float* query,
         // element already selected into R (this is what "closer to q
         // compared to any element from R" actually encodes).
         bool keep = true;
-        for (const auto& r : R) {
+        for (const Neighbor& r : R) {
             const float dist_e_r = config_.distance(e_vec, embedding(nodes_[r.idx]), dim);
             if (dist_e_r < e.dist) {
                 keep = false;
