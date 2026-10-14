@@ -1,6 +1,6 @@
 [project]
 name = "mvdb"
-version = "0.1.0"
+version = "0.0.0"
 authors = [{ name = "FabrizioSandri", email = "dev.fabriziosandri@gmail.com" }]
 description = "MVDB (Mini Vector DB): a mini implementation of a Vector DB based on HNSW"
 keywords = ["vector database", "hnsw", "nearest neighbors", "ann", "embeddings"]
