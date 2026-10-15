@@ -68,6 +68,10 @@ class MVDB:
         contiguous_vector = np.ascontiguousarray(vector, dtype=np.float32)
         self._index.add(id, contiguous_vector)
 
+    def add_batch(self, ids: npt.ArrayLike, vectors: npt.ArrayLike):
+        """Insert multiple vectors in the index."""
+        self._index.add_batch(ids, vectors)
+
     def remove(self, id: int):
         """Remove a vector from the index.
 

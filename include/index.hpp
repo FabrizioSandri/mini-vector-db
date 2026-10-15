@@ -43,6 +43,12 @@ public:
     // Add a vector with ID. dim must match consistently across calls.
     void add(std::size_t id, const float* vector, std::size_t dim);
 
+    // Add multiple vectors with IDs. dim must match consistently across calls.
+    void add_batch(const std::size_t* ids,
+                   const float* const* vectors,
+                   std::size_t count,
+                   std::size_t dim);
+
     // Remove a vector with ID
     void remove(std::size_t id);
 

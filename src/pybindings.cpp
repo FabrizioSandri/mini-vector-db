@@ -37,6 +37,29 @@ public:
         return HNSWIndex::add(id, array.data(), static_cast<std::size_t>(array.shape(0)));
     }
 
+    void add_batch(py::array_t<std::size_t, py::array::c_style | py::array::forcecast> ids,
+                   py::array_t<float, py::array::c_style | py::array::forcecast> arrays) {
+        if (ids.ndim() != 1) {
+            throw py::value_error("ids must be a 1-dimensional NumPy array");
+        }
+        if (arrays.ndim() != 2) {
+            throw py::value_error("vectors must be a 2-dimensional NumPy array");
+        }
+        if (ids.shape(0) != arrays.shape(0)) {
+            throw py::value_error("ids and vectors must contain the same number of items");
+        }
+
+        std::vector<const float*> vector_ptrs(arrays.shape(0));
+        for (std::size_t i = 0; i < vector_ptrs.size(); ++i) {
+            vector_ptrs[i] = arrays.data() + i * arrays.shape(1);
+        }
+
+        return HNSWIndex::add_batch(ids.data(),
+                                    vector_ptrs.data(),
+                                    arrays.shape(0),
+                                    arrays.shape(1));
+    }
+
     void remove(std::size_t id) {
         return HNSWIndex::remove(id);
     }
@@ -76,6 +99,7 @@ PYBIND11_MODULE(_core, m) {
              py::arg("max_level") = 16,
              py::arg("distance") = Distance::L2)
         .def("add", &PyHNSWIndex::add, py::arg("id"), py::arg("vector"))
+        .def("add_batch", &PyHNSWIndex::add_batch, py::arg("ids"), py::arg("vectors"))
         .def("remove", &PyHNSWIndex::remove, py::arg("id"))
         .def("size", &PyHNSWIndex::size)
         .def("search", &PyHNSWIndex::search, py::arg("query"), py::arg("k"));

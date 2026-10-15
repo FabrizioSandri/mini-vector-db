@@ -143,8 +143,20 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     }
 }
 
-vector<Neighbor>
-HNSWIndex::search_layer(const float* query, Node* ep, size_t ef, size_t level, size_t dim) const {
+void HNSWIndex::add_batch(const size_t* ids,
+                          const float* const* vectors,
+                          size_t count,
+                          size_t dim) {
+    for (size_t i = 0; i < count; ++i) {
+        add(ids[i], vectors[i], dim);
+    }
+}
+
+vector<Neighbor> HNSWIndex::search_layer(const float* query,
+                                         Node* ep,
+                                         size_t ef,
+                                         size_t level,
+                                         size_t dim) const {
 
     priority_queue<Neighbor, vector<Neighbor>, NeighborMinHeapCompare>
         candidates; // Min-priority queue C
