@@ -26,3 +26,4 @@ PackConstructorInitializers: Never
 AllowShortFunctionsOnASingleLine: None
 
 PointerAlignment: Left
+PenaltyReturnTypeOnItsOwnLine: 1000000
