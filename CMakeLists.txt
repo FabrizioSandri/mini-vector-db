@@ -29,11 +29,54 @@ target_include_directories(mvdb PUBLIC
 )
 
 
-# Executables
-find_package(fmt CONFIG REQUIRED)
+# WebAssembly bindings (configure with emcmake).
+option(MVDB_BUILD_WASM "Build JavaScript/WebAssembly bindings" ${EMSCRIPTEN})
+if(EMSCRIPTEN)
+  set(MVDB_EXAMPLES_DEFAULT OFF)
+else()
+  set(MVDB_EXAMPLES_DEFAULT ON)
+endif()
+option(MVDB_BUILD_EXAMPLES "Build native demo executables (requires fmt)" ${MVDB_EXAMPLES_DEFAULT})
 
-add_executable(main tests/cpp/main.cpp)
-target_link_libraries(main PRIVATE mvdb fmt::fmt)
+if(MVDB_BUILD_WASM)
+  if(NOT EMSCRIPTEN)
+    message(FATAL_ERROR "MVDB_BUILD_WASM requires Emscripten. Configure with emcmake cmake.")
+  endif()
 
-add_executable(latency tests/cpp/latency.cpp)
-target_link_libraries(latency PRIVATE mvdb fmt::fmt)
+  # Enable catching core exceptions so the bindings can turn them into JS errors.
+  target_compile_options(mvdb PRIVATE -fexceptions)
+  add_executable(mvdb_wasm src/wasmbindings.cpp)
+  target_link_libraries(mvdb_wasm PRIVATE mvdb)
+  target_compile_options(mvdb_wasm PRIVATE -fexceptions)
+  target_link_options(mvdb_wasm PRIVATE
+    --bind
+    -fexceptions
+    -sMODULARIZE=1
+    -sEXPORT_ES6=1
+    -sENVIRONMENT=web,node
+    -sALLOW_MEMORY_GROWTH=1
+    -sFILESYSTEM=0
+    -sEXPORT_NAME="createMVDB"
+  )
+  set_target_properties(mvdb_wasm PROPERTIES
+    OUTPUT_NAME mvdb-core
+    SUFFIX ".js"  
+  )
+endif()
+
+# Native executables
+if(MVDB_BUILD_EXAMPLES)
+  find_package(fmt CONFIG REQUIRED)
+
+  add_executable(main tests/cpp/main.cpp)
+  target_link_libraries(main PRIVATE mvdb fmt::fmt)
+
+  add_executable(latency tests/cpp/latency.cpp)
+  target_link_libraries(latency PRIVATE mvdb fmt::fmt)
+endif()
+
+# Build with https://emscripten.org/docs/compiling/Building-Projects.html#cmake-based-projects
+# Run emcmake with the normal cmake command as an argument.
+# emcmake cmake -B build
+# Build the project using cmake --build (or make).
+# cmake --build build

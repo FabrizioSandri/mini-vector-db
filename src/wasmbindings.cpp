@@ -21,13 +21,17 @@ public:
                   std::size_t ef_search,
                   std::size_t max_level,
                   Distance distance) :
-        index_(std::make_unique<HNSWIndex>(
-            HNSWConfig{.dim = dim,
-                       .M = M,
-                       .ef_construction = ef_construction,
-                       .ef_search = ef_search,
-                       .max_level = max_level,
-                       .distance = (distance == Distance::L2) ? l2_distance : cosine_distance})) {
+        index_(std::make_unique<HNSWIndex>(HNSWConfig{
+            .dim = dim,
+            .M = M,
+            .ef_construction = ef_construction,
+            .ef_search = ef_search,
+            .max_level = max_level,
+            .distance = (distance == Distance::L2) ? l2_distance : cosine_distance,
+            .Mmax0 = 2 * M,
+            .Mmax = M,
+            .mL_ = 1.0 / log(std::max((int)M, 2)),
+        })) {
     }
 
     void add(std::size_t id, const emscripten::val& vec) {
