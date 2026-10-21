@@ -1,0 +1,34 @@
+name: WebAssembly
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.64
+          actions-cache-folder: emsdk-cache
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: tests/ts/pnpm-lock.yaml
+      - name: Configure WebAssembly build
+        run: emcmake cmake -S . -B build -DMVDB_BUILD_WASM=ON -DMVDB_BUILD_EXAMPLES=OFF
+      - name: Build WebAssembly module
+        run: cmake --build build --target mvdb_wasm
+      - name: Install JavaScript test dependencies
+        run: pnpm --dir tests/ts install --frozen-lockfile
+      - name: Run JavaScript and TypeScript tests
+        run: pnpm --dir tests/ts test
