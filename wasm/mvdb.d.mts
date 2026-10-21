@@ -22,7 +22,6 @@ export class HNSWIndex {
     remove(id: number): void;
     size(): number;
     search(query: Float32Array | number[], k: number): SearchResult[];
-
 }
 
 declare const Module: {

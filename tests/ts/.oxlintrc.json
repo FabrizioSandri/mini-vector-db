@@ -1,0 +1,21 @@
+{
+    "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+    "plugins": ["typescript", "import", "eslint"],
+    "categories": {
+        "correctness": "error",
+        "suspicious": "error",
+        "pedantic": "off",
+        "style": "off",
+        "restriction": "off",
+        "nursery": "off"
+    },
+    "rules": {
+        "import/no-relative-parent-imports": "error",
+        "import/no-unassigned-import": "error",
+        "react/react-in-jsx-scope": "off",
+        "eslint/curly": "error",
+        "no-underscore-dangle": "off",
+        "typescript/consistent-type-imports": ["error", { "fixStyle": "inline-type-imports" }]
+    },
+    "ignorePatterns": ["**/dist/**", "**/build/**", "**/node_modules/**"]
+}
