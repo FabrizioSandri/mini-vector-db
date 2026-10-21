@@ -1,5 +1,7 @@
 import { expect, test } from 'vitest';
 
+// Tests consume the generated WASM package at the repository root.
+// eslint-disable-next-line import/no-relative-parent-imports
 import { HNSWIndex, Distance } from '../../wasm/mvdb.mjs';
 
 test('typed module exports and index operations', () => {
@@ -14,7 +16,7 @@ test('typed module exports and index operations', () => {
     expect(results[0]?.id).toBe(1);
     expect(results[0]?.distance).toBeCloseTo(0, 6);
     expect(results[1]?.id).toBe(2);
-    
+
     index.remove(1);
     expect(index.size()).toBe(1);
 });
