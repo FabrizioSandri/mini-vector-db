@@ -1,4 +1,4 @@
-import createMVDB from "../build/mvdb-core.mjs";
+import createMVDB from "../build/wasm/mvdb-core.mjs";
 
 const Module = await createMVDB();
 

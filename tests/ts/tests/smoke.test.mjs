@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 
 // Tests consume the generated WASM package at the repository root.
 // eslint-disable-next-line import/no-relative-parent-imports
-import { HNSWIndex, Distance } from '../../wasm/mvdb.mjs';
+import { Distance, HNSWIndex } from '../../../wasm/mvdb.mjs';
 
 test.each([
     ['L2', Distance.L2, 1],
