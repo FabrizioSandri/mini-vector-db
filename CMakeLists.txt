@@ -60,7 +60,7 @@ if(MVDB_BUILD_WASM)
   )
   set_target_properties(mvdb_wasm PROPERTIES
     OUTPUT_NAME mvdb-core
-    SUFFIX ".js"  
+    SUFFIX ".mjs"
   )
 endif()
 

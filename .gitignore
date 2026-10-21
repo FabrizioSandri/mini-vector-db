@@ -80,3 +80,7 @@ eggs/
 *.egg
 *.whl
 wheelhouse/
+
+# JavaScript dependencies and local Emscripten SDK
+node_modules/
+emsdk/

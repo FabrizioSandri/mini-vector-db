@@ -1,0 +1,15 @@
+{
+  "name": "mvdb-wasm-tests",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test ../js/test-smoke.mjs && tsx --test test.ts"
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0",
+    "tsx": "^4.0.0"
+  }
+}
