@@ -12,9 +12,6 @@
 
 enum class Distance { L2 = 0, COSINE = 1 };
 
-namespace {
-// C++ exceptions otherwise cross Embind as opaque CppException objects.
-// Translate only after unwinding the core operation, so its locals are cleaned up.
 template <typename Function> auto with_js_errors(Function&& operation) {
     try {
         return operation();
@@ -22,7 +19,6 @@ template <typename Function> auto with_js_errors(Function&& operation) {
         emscripten::val::global("Error").new_(std::string(error.what())).throw_();
     }
 }
-} // namespace
 
 class WasmHNSWIndex {
 private:

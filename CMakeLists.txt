@@ -75,8 +75,3 @@ if(MVDB_BUILD_EXAMPLES)
   target_link_libraries(latency PRIVATE mvdb fmt::fmt)
 endif()
 
-# Build with https://emscripten.org/docs/compiling/Building-Projects.html#cmake-based-projects
-# Run emcmake with the normal cmake command as an argument.
-# emcmake cmake -B build
-# Build the project using cmake --build (or make).
-# cmake --build build
