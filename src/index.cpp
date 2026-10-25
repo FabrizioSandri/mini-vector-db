@@ -109,25 +109,15 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
         // at this point. That means "select the M nearest" reduces to "drop the
         // single farthest element"
         const size_t cap = lc == 0 ? config_.Mmax0 : config_.Mmax;
-        for (const Neighbor& nb : neighbors) {
-            Node* neighbor = nodes_[nb.idx];
-            auto& e_conn = neighbor->neighbors[lc];
+        for (const Neighbor& neighbor : neighbors) {
+            Node* nb = nodes_[neighbor.idx];
+            auto& e_conn = nb->neighbors[lc];
             if (e_conn.size() <= cap) {
                 continue;
             }
 
             // find the index of the farthest neighbor to prune
-            auto to_prune = e_conn.begin();
-            float max_dist = config_.distance(embedding(neighbor), embedding(*to_prune), dim);
-            for (auto it = e_conn.begin() + 1; it != e_conn.end(); it++) {
-                const float d = config_.distance(embedding(neighbor), embedding(*it), dim);
-                if (d > max_dist) {
-                    max_dist = d;
-                    to_prune = it;
-                }
-            }
-
-            e_conn.erase(to_prune);
+            erase_farthest(e_conn, node);
         }
 
         // ep <- W: continue from the nearest element found at this layer.
@@ -141,6 +131,21 @@ void HNSWIndex::add(size_t id, const float* vec, size_t dim) {
     if (l > L) {
         entry_point_ = node;
     }
+}
+
+void HNSWIndex::erase_farthest(vector<Node*>& nodes, const Node* reference) {
+    auto to_prune = nodes.begin();
+    float max_dist =
+        config_.distance(embedding(reference), embedding(*to_prune), this->config_.dim);
+    for (auto it = nodes.begin() + 1; it != nodes.end(); it++) {
+        const float d = config_.distance(embedding(reference), embedding(*it), this->config_.dim);
+        if (d > max_dist) {
+            max_dist = d;
+            to_prune = it;
+        }
+    }
+
+    nodes.erase(to_prune);
 }
 
 void HNSWIndex::add_batch(const size_t* ids,

@@ -19,8 +19,8 @@ endif()
 
 # Core library 
 add_library(mvdb STATIC
-  src/index.cpp
   src/distance.cpp
+  src/index.cpp
 )
 set_target_properties(mvdb PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(mvdb PUBLIC

@@ -84,6 +84,8 @@ private:
 
     const float* embedding(const Node* node) const;
 
+    void erase_farthest(std::vector<HNSWIndex::Node*>& nodes, const Node* reference);
+
     std::vector<Neighbor> search_layer(const float* query,
                                        Node* ep,
                                        std::size_t ef,
