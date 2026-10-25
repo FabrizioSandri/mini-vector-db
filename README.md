@@ -1,6 +1,6 @@
 # MVDB — A mini vector DB
 
-An in-memory vector index based on [HNSW](https://arxiv.org/abs/1603.09320). C++20 core with Python bindings via pybind11.
+An in-memory vector index based on [HNSW](https://arxiv.org/abs/1603.09320). C++20 core, Python bindings via [pybind11](https://github.com/pybind/pybind11), and JavaScript/TypeScript support through WebAssembly.
 
 ## Install
 
@@ -11,6 +11,8 @@ uv add mvdb
 Requires Python ≥ 3.10 and NumPy.
 
 ## Usage
+
+#### Python
 
 ```python
 import numpy as np
@@ -45,6 +47,36 @@ Constructor parameters:
 | `ef_construction` | 100     | Candidate list size while building  |
 | `ef_search`       | 50      | Candidate list size while searching |
 | `max_level`       | 16      | Cap on the number of graph layers   |
+
+#### JavaScript (WebAssembly)
+
+Build the WebAssembly module with [Emscripten](https://emscripten.org/) before
+using the JavaScript wrapper:
+
+```bash
+make wasm
+```
+
+The wrapper is an ES module and works in Node.js and browsers:
+
+```js
+import { Distance, HNSWIndex } from "./wasm/mvdb.mjs";
+
+const index = new HNSWIndex(3, 16, 100, 50, 16, Distance.COSINE);
+
+index.add(1, [1, 0, 0]);
+index.add(2, new Float32Array([0, 1, 0]));
+
+const results = index.search([1, 0, 0], 2);
+console.log(results); // [{ id: 1, distance: 0 }, { id: 2, ... }]
+
+index.remove(1);
+console.log(index.size()); // 1
+```
+
+`HNSWIndex` takes `dim`, `M`, `efConstruction`, `efSearch`, `maxLevel`, and
+the distance metric (`Distance.L2` or `Distance.COSINE`). Vectors can be
+regular number arrays or `Float32Array` instances.
 
 ## Development
 
